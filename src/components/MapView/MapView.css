@@ -85,3 +85,11 @@
 .leaflet-control-attribution a {
   color: var(--text-secondary) !important;
 }
+
+.map-view-crosshair .leaflet-container {
+  cursor: crosshair !important;
+}
+
+.map-view-crosshair .leaflet-container {
+  cursor: crosshair !important;
+}

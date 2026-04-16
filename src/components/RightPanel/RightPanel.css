@@ -137,6 +137,11 @@
   color: var(--text-primary);
 }
 
+.panel-tool-active {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
 .panel-tool svg {
   flex-shrink: 0;
 }

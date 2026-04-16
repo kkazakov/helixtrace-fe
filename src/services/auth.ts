@@ -24,6 +24,25 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+export interface Point {
+  id: string;
+  lat: number;
+  lon: number;
+  elevation: number;
+  public: boolean;
+  label: string;
+  category_id: number;
+}
+
+export interface CreatePointPayload {
+  lat: number;
+  lon: number;
+  elevation: number;
+  public: boolean;
+  label: string;
+  category_id: number;
+}
+
 const STORAGE_KEY = 'helixtrace_auth';
 
 function getStoredAuth(): AuthState {
@@ -92,6 +111,30 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
   }
 
   return res;
+}
+
+export async function listPoints(includePublic = false): Promise<Point[]> {
+  const res = await authenticatedFetch(
+    `${API_BASE}/api/points?include_public=${includePublic}`
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to list points: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function createPoint(payload: CreatePointPayload): Promise<Point> {
+  const res = await authenticatedFetch(`${API_BASE}/api/point`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to create point: ${res.status}`);
+  }
+  return res.json();
 }
 
 export { getStoredAuth, storeAuth, clearAuth };

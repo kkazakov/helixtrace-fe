@@ -2,7 +2,13 @@ import { getStoredAuth, clearAuth } from '../../services/auth';
 import { ThemeToggle } from '../ThemeToggle/ThemeToggle';
 import './RightPanel.css';
 
-export function RightPanel({ onLogout }: { onLogout: () => void }) {
+interface RightPanelProps {
+  onLogout: () => void;
+  addPointMode: boolean;
+  onToggleAddPoint: () => void;
+}
+
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -56,13 +62,16 @@ export function RightPanel({ onLogout }: { onLogout: () => void }) {
             </svg>
             <span>Line of sight</span>
           </button>
-          <button className="panel-tool">
+          <button
+            className={`panel-tool${addPointMode ? ' panel-tool-active' : ''}`}
+            onClick={onToggleAddPoint}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
               <path d="M2 12l10 5 10-5" />
             </svg>
-            <span>Add device</span>
+            <span>{addPointMode ? 'Cancel' : 'Add point'}</span>
           </button>
           <button className="panel-tool">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -76,15 +85,14 @@ export function RightPanel({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="panel-section">
-        <h3 className="panel-section-title">Devices</h3>
+        <h3 className="panel-section-title">Points</h3>
         <div className="panel-devices-empty">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" />
-            <line x1="8" y1="21" x2="16" y2="21" />
-            <line x1="12" y1="17" x2="12" y2="21" />
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
           </svg>
-          <p>No devices placed yet</p>
-          <span>Click on the map to add a radio device</span>
+          <p>No points placed yet</p>
+          <span>Click "Add point" then click on the map</span>
         </div>
       </div>
     </div>

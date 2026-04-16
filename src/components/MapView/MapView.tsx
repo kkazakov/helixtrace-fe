@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
+import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
+import { listPoints, createPoint, type Point } from '../../services/auth';
+import { getCategoryIcon } from '../../services/pointCategories';
+import { useToast } from '../../context/ToastContext';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
@@ -55,13 +59,69 @@ function MapClickHandler({ onMapClick }: { onMapClick: (pos: [number, number]) =
   return null;
 }
 
-export function MapView() {
+interface MapViewProps {
+  addPointMode: boolean;
+  onCancelAddPoint: () => void;
+  onPointAdded: () => void;
+}
+
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapViewProps) {
+  const [points, setPoints] = useState<Point[]>([]);
+  const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const loadPoints = async () => {
+      try {
+        const data = await listPoints();
+        setPoints(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          showToast(err.message, 'error');
+        }
+      }
+    };
+    loadPoints();
+  }, [showToast]);
+
   const handleLocationFound = (_pos: [number, number]) => {};
 
-  const handleMapClick = (_pos: [number, number]) => {};
+  const handleMapClick = useCallback((pos: [number, number]) => {
+    if (addPointMode) {
+      setPendingPoint({ lat: pos[0], lon: pos[1] });
+    }
+  }, [addPointMode]);
+
+  const handleDialogCancel = useCallback(() => {
+    setPendingPoint(null);
+    onCancelAddPoint();
+  }, [onCancelAddPoint]);
+
+  const handleDialogSave = useCallback(async (label: string, categoryId: number, isPublic: boolean) => {
+    if (!pendingPoint) return;
+    try {
+      const newPoint = await createPoint({
+        lat: pendingPoint.lat,
+        lon: pendingPoint.lon,
+        elevation: 0,
+        public: isPublic,
+        label,
+        category_id: categoryId,
+      });
+      setPoints(prev => [...prev, newPoint]);
+      setPendingPoint(null);
+      onCancelAddPoint();
+      onPointAdded();
+      showToast('Point created successfully', 'success');
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
+  }, [pendingPoint, onCancelAddPoint, onPointAdded, showToast]);
 
   return (
-    <div className="map-view">
+    <div className={`map-view${addPointMode ? ' map-view-crosshair' : ''}`}>
       <MapContainer
         center={[42.6977, 23.3215]}
         zoom={12}
@@ -74,7 +134,22 @@ export function MapView() {
         />
         <LocationMarker onLocationFound={handleLocationFound} />
         <MapClickHandler onMapClick={handleMapClick} />
+        {points.map(point => (
+          <Marker
+            key={point.id}
+            position={[point.lat, point.lon]}
+            icon={getCategoryIcon(point.category_id)}
+          />
+        ))}
       </MapContainer>
+      {pendingPoint && (
+        <AddPointDialog
+          lat={pendingPoint.lat}
+          lon={pendingPoint.lon}
+          onSave={handleDialogSave}
+          onCancel={handleDialogCancel}
+        />
+      )}
     </div>
   );
 }

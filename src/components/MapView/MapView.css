@@ -90,6 +90,66 @@
   cursor: crosshair !important;
 }
 
+.point-popup {
+  min-width: 160px;
+}
+
+.point-popup-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.point-popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.point-popup-key {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.point-popup-value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.point-popup {
+  min-width: 160px;
+}
+
+.point-popup-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.point-popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.point-popup-key {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.point-popup-value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .map-view-crosshair .leaflet-container {
   cursor: crosshair !important;
 }

@@ -4,9 +4,68 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
-import { listPoints, createPoint, type Point } from '../../services/auth';
+import { listPoints, createPoint, getPointDetails, type Point, type PointDetails } from '../../services/auth';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
+
+function PointMarker({ point, isSelected, onSelect }: { point: Point; isSelected: boolean; onSelect: (id: string) => void }) {
+  const markerRef = useRef<L.Marker>(null);
+  const [details, setDetails] = useState<PointDetails | null>(null);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (isSelected && details) {
+      markerRef.current?.openPopup();
+    }
+  }, [isSelected, details]);
+
+  useEffect(() => {
+    if (!isSelected) {
+      setDetails(null);
+    }
+  }, [isSelected]);
+
+  const handleClick = async () => {
+    onSelect(point.id);
+    try {
+      const data = await getPointDetails(point.id);
+      setDetails(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
+  };
+
+  return (
+    <Marker
+      position={[point.lat, point.lon]}
+      icon={getCategoryIcon(point.category_id)}
+      eventHandlers={{ click: handleClick }}
+      ref={markerRef}
+    >
+      {isSelected && details && (
+        <Popup className="custom-popup" autoClose={false} closeOnClick={false}>
+          <div className="point-popup">
+            <div className="point-popup-label">{details.label}</div>
+            <div className="point-popup-row">
+              <span className="point-popup-key">Lat:</span>
+              <span className="point-popup-value">{details.lat.toFixed(6)}</span>
+            </div>
+            <div className="point-popup-row">
+              <span className="point-popup-key">Lon:</span>
+              <span className="point-popup-value">{details.lon.toFixed(6)}</span>
+            </div>
+            <div className="point-popup-row">
+              <span className="point-popup-key">Visibility:</span>
+              <span className="point-popup-value">{details.public ? 'Public' : 'Private'}</span>
+            </div>
+          </div>
+        </Popup>
+      )}
+    </Marker>
+  );
+}
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
@@ -98,6 +157,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -119,6 +179,8 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const handleMapClick = useCallback((pos: [number, number]) => {
     if (addPointMode) {
       setPendingPoint({ lat: pos[0], lon: pos[1] });
+    } else {
+      setSelectedPointId(null);
     }
   }, [addPointMode]);
 
@@ -179,10 +241,11 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         <MapCenter center={centerOn} />
         <MapCenterTracker onCenterChange={setMapCenter} />
         {points.map(point => (
-          <Marker
+          <PointMarker
             key={point.id}
-            position={[point.lat, point.lon]}
-            icon={getCategoryIcon(point.category_id)}
+            point={point}
+            isSelected={selectedPointId === point.id}
+            onSelect={setSelectedPointId}
           />
         ))}
       </MapContainer>

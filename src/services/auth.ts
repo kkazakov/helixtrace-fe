@@ -123,6 +123,27 @@ export async function listPoints(includePublic = false): Promise<Point[]> {
   return res.json();
 }
 
+export interface PointDetails {
+  id: string;
+  lat: number;
+  lon: number;
+  elevation: number;
+  public: boolean;
+  label: string;
+  category_id: number;
+  user: string;
+}
+
+export async function getPointDetails(pointId: string): Promise<PointDetails> {
+  const res = await authenticatedFetch(`${API_BASE}/api/point/${pointId}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to get point details: ${res.status}`);
+  }
+  const json = await res.json();
+  return json.data;
+}
+
 export async function createPoint(payload: CreatePointPayload): Promise<Point> {
   const res = await authenticatedFetch(`${API_BASE}/api/point`, {
     method: 'POST',

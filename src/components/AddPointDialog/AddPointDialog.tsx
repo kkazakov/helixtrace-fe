@@ -5,17 +5,23 @@ import './AddPointDialog.css';
 export interface AddPointDialogProps {
   lat: number;
   lon: number;
-  onSave: (label: string, categoryId: number, isPublic: boolean) => void;
+  editableCoords?: boolean;
+  onSave: (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => void;
   onCancel: () => void;
 }
 
-export function AddPointDialog({ lat, lon, onSave, onCancel }: AddPointDialogProps) {
+export function AddPointDialog({ lat, lon, editableCoords = false, onSave, onCancel }: AddPointDialogProps) {
+  const [latVal, setLatVal] = useState(lat.toFixed(6));
+  const [lonVal, setLonVal] = useState(lon.toFixed(6));
   const [label, setLabel] = useState('');
   const [categoryId, setCategoryId] = useState(1);
   const [isPublic, setIsPublic] = useState(false);
 
   const handleSave = () => {
-    onSave(label, categoryId, isPublic);
+    const parsedLat = parseFloat(latVal);
+    const parsedLon = parseFloat(lonVal);
+    if (isNaN(parsedLat) || isNaN(parsedLon)) return;
+    onSave(parsedLat, parsedLon, label, categoryId, isPublic);
   };
 
   return (
@@ -27,12 +33,33 @@ export function AddPointDialog({ lat, lon, onSave, onCancel }: AddPointDialogPro
         </div>
         <div className="add-point-dialog-body">
           <div className="add-point-field">
-            <label>Latitude</label>
-            <span className="add-point-value">{lat.toFixed(6)}</span>
+            <label htmlFor="point-lat">Latitude</label>
+            {editableCoords ? (
+              <input
+                id="point-lat"
+                type="text"
+                className="add-point-input"
+                value={latVal}
+                onChange={e => setLatVal(e.target.value)}
+                autoFocus
+              />
+            ) : (
+              <span className="add-point-value">{lat.toFixed(6)}</span>
+            )}
           </div>
           <div className="add-point-field">
-            <label>Longitude</label>
-            <span className="add-point-value">{lon.toFixed(6)}</span>
+            <label htmlFor="point-lon">Longitude</label>
+            {editableCoords ? (
+              <input
+                id="point-lon"
+                type="text"
+                className="add-point-input"
+                value={lonVal}
+                onChange={e => setLonVal(e.target.value)}
+              />
+            ) : (
+              <span className="add-point-value">{lon.toFixed(6)}</span>
+            )}
           </div>
           <div className="add-point-field">
             <label htmlFor="point-label">Label</label>
@@ -43,7 +70,6 @@ export function AddPointDialog({ lat, lon, onSave, onCancel }: AddPointDialogPro
               value={label}
               onChange={e => setLabel(e.target.value)}
               placeholder="Enter label..."
-              autoFocus
             />
           </div>
           <div className="add-point-field">

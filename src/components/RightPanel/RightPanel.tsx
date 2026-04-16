@@ -6,9 +6,10 @@ interface RightPanelProps {
   onLogout: () => void;
   addPointMode: boolean;
   onToggleAddPoint: () => void;
+  onAddByCoordinates: () => void;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -73,6 +74,14 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint }: RightPa
             </svg>
             <span>{addPointMode ? 'Cancel' : 'Add point'}</span>
           </button>
+          <button className="panel-tool" onClick={onAddByCoordinates}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            <span>Add by coordinates</span>
+          </button>
           <button className="panel-tool">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -81,18 +90,6 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint }: RightPa
             </svg>
             <span>Find optimal placement</span>
           </button>
-        </div>
-      </div>
-
-      <div className="panel-section">
-        <h3 className="panel-section-title">Points</h3>
-        <div className="panel-devices-empty">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          <p>No points placed yet</p>
-          <span>Click "Add point" then click on the map</span>
         </div>
       </div>
     </div>

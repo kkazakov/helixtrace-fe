@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -24,9 +24,11 @@ const userIcon = L.divIcon({
 function LocationMarker({ onLocationFound }: { onLocationFound: (pos: [number, number]) => void }) {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const map = useMap();
+  const hasLocated = useRef(false);
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || hasLocated.current) return;
+    hasLocated.current = true;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -59,15 +61,43 @@ function MapClickHandler({ onMapClick }: { onMapClick: (pos: [number, number]) =
   return null;
 }
 
+function MapCenter({ center }: { center: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+}
+
+function MapCenterTracker({ onCenterChange }: { onCenterChange: (center: [number, number]) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    onCenterChange([map.getCenter().lat, map.getCenter().lng]);
+    map.on('moveend', () => {
+      onCenterChange([map.getCenter().lat, map.getCenter().lng]);
+    });
+    return () => {
+      map.off('moveend');
+    };
+  }, [map, onCenterChange]);
+  return null;
+}
+
 interface MapViewProps {
   addPointMode: boolean;
   onCancelAddPoint: () => void;
   onPointAdded: () => void;
+  showCoordsDialog: boolean;
+  onCancelCoordsDialog: () => void;
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
+  const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -84,7 +114,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapVie
     loadPoints();
   }, [showToast]);
 
-  const handleLocationFound = (_pos: [number, number]) => {};
+  const handleLocationFound = useCallback((_pos: [number, number]) => {}, []);
 
   const handleMapClick = useCallback((pos: [number, number]) => {
     if (addPointMode) {
@@ -97,20 +127,21 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapVie
     onCancelAddPoint();
   }, [onCancelAddPoint]);
 
-  const handleDialogSave = useCallback(async (label: string, categoryId: number, isPublic: boolean) => {
-    if (!pendingPoint) return;
+  const handleCoordsDialogCancel = useCallback(() => {
+    onCancelCoordsDialog();
+  }, [onCancelCoordsDialog]);
+
+  const savePoint = useCallback(async (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => {
     try {
       const newPoint = await createPoint({
-        lat: pendingPoint.lat,
-        lon: pendingPoint.lon,
-        elevation: 0,
+        lat,
+        lon,
         public: isPublic,
         label,
         category_id: categoryId,
       });
       setPoints(prev => [...prev, newPoint]);
-      setPendingPoint(null);
-      onCancelAddPoint();
+      setCenterOn([newPoint.lat, newPoint.lon]);
       onPointAdded();
       showToast('Point created successfully', 'success');
     } catch (err) {
@@ -118,7 +149,18 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapVie
         showToast(err.message, 'error');
       }
     }
-  }, [pendingPoint, onCancelAddPoint, onPointAdded, showToast]);
+  }, [onPointAdded, showToast]);
+
+  const handleDialogSave = useCallback(async (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => {
+    setPendingPoint(null);
+    onCancelAddPoint();
+    await savePoint(lat, lon, label, categoryId, isPublic);
+  }, [onCancelAddPoint, savePoint]);
+
+  const handleCoordsDialogSave = useCallback(async (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => {
+    onCancelCoordsDialog();
+    await savePoint(lat, lon, label, categoryId, isPublic);
+  }, [onCancelCoordsDialog, savePoint]);
 
   return (
     <div className={`map-view${addPointMode ? ' map-view-crosshair' : ''}`}>
@@ -134,6 +176,8 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapVie
         />
         <LocationMarker onLocationFound={handleLocationFound} />
         <MapClickHandler onMapClick={handleMapClick} />
+        <MapCenter center={centerOn} />
+        <MapCenterTracker onCenterChange={setMapCenter} />
         {points.map(point => (
           <Marker
             key={point.id}
@@ -148,6 +192,15 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded }: MapVie
           lon={pendingPoint.lon}
           onSave={handleDialogSave}
           onCancel={handleDialogCancel}
+        />
+      )}
+      {showCoordsDialog && (
+        <AddPointDialog
+          lat={mapCenter[0]}
+          lon={mapCenter[1]}
+          editableCoords
+          onSave={handleCoordsDialogSave}
+          onCancel={handleCoordsDialogCancel}
         />
       )}
     </div>

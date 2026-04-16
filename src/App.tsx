@@ -10,6 +10,7 @@ import './App.css';
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [addPointMode, setAddPointMode] = useState(false);
+  const [showCoordsDialog, setShowCoordsDialog] = useState(false);
 
   return (
     <ToastProvider>
@@ -19,6 +20,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             addPointMode={addPointMode}
             onCancelAddPoint={() => setAddPointMode(false)}
             onPointAdded={() => {}}
+            showCoordsDialog={showCoordsDialog}
+            onCancelCoordsDialog={() => setShowCoordsDialog(false)}
           />
         </div>
         <div className="dashboard-panel">
@@ -26,6 +29,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             onLogout={onLogout}
             addPointMode={addPointMode}
             onToggleAddPoint={() => setAddPointMode(prev => !prev)}
+            onAddByCoordinates={() => setShowCoordsDialog(true)}
           />
         </div>
       </div>

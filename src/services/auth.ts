@@ -37,7 +37,6 @@ export interface Point {
 export interface CreatePointPayload {
   lat: number;
   lon: number;
-  elevation: number;
   public: boolean;
   label: string;
   category_id: number;

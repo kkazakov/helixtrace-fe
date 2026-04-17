@@ -4,37 +4,106 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
-import { listPoints, createPoint, getPointDetails, type Point, type PointDetails } from '../../services/auth';
+import { listPoints, createPoint, getPointDetails, type Point } from '../../services/auth';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
 function PointMarker({ point, isSelected, onSelect }: { point: Point; isSelected: boolean; onSelect: (id: string) => void }) {
   const markerRef = useRef<L.Marker>(null);
-  const [details, setDetails] = useState<PointDetails | null>(null);
-  const { showToast } = useToast();
+  const popupRef = useRef<L.Popup | null>(null);
+  const map = useMap();
 
   useEffect(() => {
-    if (isSelected && details) {
-      markerRef.current?.openPopup();
+    if (!markerRef.current) return;
+
+    const popup = L.popup({
+      className: 'custom-popup',
+      autoClose: false,
+      closeOnClick: false,
+    });
+
+    popup.setContent(
+      `<div class="point-popup">
+        <div class="point-popup-label">${point.label}</div>
+        <div class="point-popup-row">
+          <span class="point-popup-key">Lat:</span>
+          <span class="point-popup-value">${point.lat.toFixed(6)}</span>
+        </div>
+        <div class="point-popup-row">
+          <span class="point-popup-key">Lon:</span>
+          <span class="point-popup-value">${point.lon.toFixed(6)}</span>
+        </div>
+        <div class="point-popup-row">
+          <span class="point-popup-key">Visibility:</span>
+          <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
+        </div>
+      </div>`
+    );
+
+    markerRef.current.bindPopup(popup);
+    popupRef.current = popup;
+
+    return () => {
+      markerRef.current?.unbindPopup();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSelected && markerRef.current) {
+      markerRef.current.openPopup();
+      getPointDetails(point.id)
+        .then(data => {
+          const popup = popupRef.current;
+          if (popup) {
+            popup.setContent(
+              `<div class="point-popup">
+                <div class="point-popup-label">${point.label}</div>
+                <div class="point-popup-row">
+                  <span class="point-popup-key">Lat:</span>
+                  <span class="point-popup-value">${point.lat.toFixed(6)}</span>
+                </div>
+                <div class="point-popup-row">
+                  <span class="point-popup-key">Lon:</span>
+                  <span class="point-popup-value">${point.lon.toFixed(6)}</span>
+                </div>
+                <div class="point-popup-row">
+                  <span class="point-popup-key">Visibility:</span>
+                  <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
+                </div>
+                <div class="point-popup-row">
+                  <span class="point-popup-key">User:</span>
+                  <span class="point-popup-value">${data.user}</span>
+                </div>
+              </div>`
+            );
+          }
+        })
+        .catch(() => {});
     }
-  }, [isSelected, details]);
-
-  useEffect(() => {
-    if (!isSelected) {
-      setDetails(null);
+    if (!isSelected && markerRef.current) {
+      markerRef.current.closePopup();
     }
   }, [isSelected]);
 
-  const handleClick = async () => {
-    onSelect(point.id);
-    try {
-      const data = await getPointDetails(point.id);
-      setDetails(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        showToast(err.message, 'error');
+  useEffect(() => {
+    const onMove = () => {
+      if (!isSelected || !popupRef.current || !markerRef.current) return;
+      const popup = popupRef.current;
+      if (!popup.isOpen()) return;
+      const bounds = map.getBounds();
+      const pos = markerRef.current.getLatLng();
+      if (!bounds.contains(pos)) {
+        markerRef.current.closePopup();
       }
-    }
+    };
+    map.on('moveend', onMove);
+    return () => {
+      map.off('moveend', onMove);
+    };
+  }, [isSelected, map]);
+
+  const handleClick = () => {
+    onSelect(point.id);
   };
 
   return (
@@ -43,27 +112,7 @@ function PointMarker({ point, isSelected, onSelect }: { point: Point; isSelected
       icon={getCategoryIcon(point.category_id)}
       eventHandlers={{ click: handleClick }}
       ref={markerRef}
-    >
-      {isSelected && details && (
-        <Popup className="custom-popup" autoClose={false} closeOnClick={false}>
-          <div className="point-popup">
-            <div className="point-popup-label">{details.label}</div>
-            <div className="point-popup-row">
-              <span className="point-popup-key">Lat:</span>
-              <span className="point-popup-value">{details.lat.toFixed(6)}</span>
-            </div>
-            <div className="point-popup-row">
-              <span className="point-popup-key">Lon:</span>
-              <span className="point-popup-value">{details.lon.toFixed(6)}</span>
-            </div>
-            <div className="point-popup-row">
-              <span className="point-popup-key">Visibility:</span>
-              <span className="point-popup-value">{details.public ? 'Public' : 'Private'}</span>
-            </div>
-          </div>
-        </Popup>
-      )}
-    </Marker>
+    />
   );
 }
 

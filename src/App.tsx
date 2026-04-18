@@ -50,6 +50,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             onCancelCoordsDialog={() => setShowCoordsDialog(false)}
             onMarkerSelect={handleMarkerSelect}
             lineOfSightMode={lineOfSightMode}
+            selectedMarkers={selectedMarkers}
           />
         </div>
         <div className="dashboard-panel">

@@ -24,6 +24,15 @@
   transform: scale(1.1);
 }
 
+.los-marker-highlight svg {
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.6)) !important;
+}
+
+.los-marker-highlight svg path {
+  stroke: #000 !important;
+  stroke-width: 2px !important;
+}
+
 .custom-popup .leaflet-popup-content-wrapper {
   background: var(--bg-secondary);
   color: var(--text-primary);

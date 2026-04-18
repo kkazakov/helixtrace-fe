@@ -270,42 +270,70 @@ function MapCenterTracker({ onCenterChange }: { onCenterChange: (center: [number
   return null;
 }
 
-function LineOfSightLine({ selectedMarkers, mapLayer, losStatus }: { selectedMarkers: Point[]; mapLayer: string; losStatus: 'unknown' | 'clear' | 'blocked' }) {
-  const map = useMap();
-  const polylineRef = useRef<L.Polyline | null>(null);
+import { type TraceResponse } from '../../services/auth';
 
-  const getLineColor = () => {
-    if (losStatus === 'clear') {
+interface TraceResult {
+  traceData: TraceResponse;
+  fromElevation: number;
+  toElevation: number;
+  fromLabel: string;
+  toLabel: string;
+  losStatus: 'unknown' | 'clear' | 'blocked';
+}
+
+function LineOfSightLine({ selectedMarkers, mapLayer, traceResults }: { selectedMarkers: Point[]; mapLayer: string; traceResults: TraceResult[] }) {
+  const map = useMap();
+  const polylinesRef = useRef<L.Polyline[]>([]);
+
+  const getLineColor = (status: 'unknown' | 'clear' | 'blocked') => {
+    if (status === 'clear') {
       return mapLayer === 'esri' ? '#81c784' : '#2e7d32';
     }
-    if (losStatus === 'blocked') {
+    if (status === 'blocked') {
       return '#d32f2f';
     }
     return mapLayer === 'esri' ? '#bdbdbd' : '#555555';
   };
 
   useEffect(() => {
-    if (selectedMarkers.length === 2) {
-      const latlngs = selectedMarkers.map(m => [m.lat, m.lon] as [number, number]);
-      const polyline = L.polyline(latlngs, {
-        color: getLineColor(),
-        weight: 3,
-        opacity: 0.8,
-        className: 'los-line',
-      }).addTo(map);
-      polylineRef.current = polyline;
+    polylinesRef.current.forEach(p => map.removeLayer(p));
+    polylinesRef.current = [];
 
-      return () => {
-        map.removeLayer(polyline);
-        polylineRef.current = null;
-      };
-    } else {
-      if (polylineRef.current) {
-        map.removeLayer(polylineRef.current);
-        polylineRef.current = null;
+    if (selectedMarkers.length >= 2 && traceResults.length > 0) {
+      const edges: [[number, number], [number, number]][] = [];
+      if (selectedMarkers.length === 2) {
+        edges.push(
+          [[selectedMarkers[0].lat, selectedMarkers[0].lon], [selectedMarkers[1].lat, selectedMarkers[1].lon]]
+        );
+      } else if (selectedMarkers.length === 3) {
+        edges.push(
+          [[selectedMarkers[0].lat, selectedMarkers[0].lon], [selectedMarkers[1].lat, selectedMarkers[1].lon]]
+        );
+        edges.push(
+          [[selectedMarkers[1].lat, selectedMarkers[1].lon], [selectedMarkers[2].lat, selectedMarkers[2].lon]]
+        );
+        edges.push(
+          [[selectedMarkers[0].lat, selectedMarkers[0].lon], [selectedMarkers[2].lat, selectedMarkers[2].lon]]
+        );
       }
+
+      edges.forEach((edge, i) => {
+        const status = traceResults[i]?.losStatus ?? 'unknown';
+        const polyline = L.polyline(edge, {
+          color: getLineColor(status),
+          weight: 3,
+          opacity: 0.8,
+          className: 'los-line',
+        }).addTo(map);
+        polylinesRef.current.push(polyline);
+      });
     }
-  }, [selectedMarkers, mapLayer, losStatus, map]);
+
+    return () => {
+      polylinesRef.current.forEach(p => map.removeLayer(p));
+      polylinesRef.current = [];
+    };
+  }, [selectedMarkers, mapLayer, traceResults, map]);
 
   return null;
 }
@@ -383,10 +411,10 @@ interface MapViewProps {
   selectedMarkers: Point[];
   onMarkerDrag?: (id: string, lat: number, lon: number) => void;
   onAddLosPoint: (lat: number, lon: number) => void;
-  losStatus: 'unknown' | 'clear' | 'blocked';
+  traceResults: TraceResult[];
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, losStatus }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, traceResults }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -586,7 +614,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 mapLayer={mapLayer}
               />
         ))}
-        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} mapLayer={mapLayer} losStatus={losStatus} />}
+        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} mapLayer={mapLayer} traceResults={traceResults} />}
         {lineOfSightMode && selectedMarkers.map((marker, idx) => {
           const isExisting = points.some(p => p.id === marker.id);
           if (!isExisting) {

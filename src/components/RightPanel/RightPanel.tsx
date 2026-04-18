@@ -4,6 +4,15 @@ import { calculateDistance, formatDistance } from '../../services/distance';
 import { TerrainGraph } from '../TerrainGraph';
 import './RightPanel.css';
 
+interface TraceResult {
+  traceData: TraceResponse;
+  fromElevation: number;
+  toElevation: number;
+  fromLabel: string;
+  toLabel: string;
+  losStatus: 'unknown' | 'clear' | 'blocked';
+}
+
 interface RightPanelProps {
   onLogout: () => void;
   addPointMode: boolean;
@@ -13,13 +22,13 @@ interface RightPanelProps {
   onToggleLineOfSight: () => void;
   selectedMarkers: Point[];
   onMarkerRemove: (id: string) => void;
-  traceData: TraceResponse | null;
+  traceResults: TraceResult[];
   traceLoading: boolean;
   losStatus: 'unknown' | 'clear' | 'blocked';
-  onExpandGraph: () => void;
+  onExpandGraph: (index: number) => void;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading, losStatus: _losStatus, onExpandGraph }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceResults, traceLoading, losStatus: _losStatus, onExpandGraph }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -118,15 +127,42 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                   </div>
                 ))}
               </div>
-              {selectedMarkers.length === 2 && (
+              {selectedMarkers.length >= 2 && (
                 <>
                   <div className="los-distance">
-                    Distance: {formatDistance(calculateDistance(
-                      selectedMarkers[0].lat,
-                      selectedMarkers[0].lon,
-                      selectedMarkers[1].lat,
-                      selectedMarkers[1].lon
-                    ))}
+                    {selectedMarkers.length === 2 ? (
+                      <>
+                        Distance: {formatDistance(calculateDistance(
+                          selectedMarkers[0].lat,
+                          selectedMarkers[0].lon,
+                          selectedMarkers[1].lat,
+                          selectedMarkers[1].lon
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        {formatDistance(calculateDistance(
+                          selectedMarkers[0].lat,
+                          selectedMarkers[0].lon,
+                          selectedMarkers[1].lat,
+                          selectedMarkers[1].lon
+                        ))}
+                        {' / '}
+                        {formatDistance(calculateDistance(
+                          selectedMarkers[1].lat,
+                          selectedMarkers[1].lon,
+                          selectedMarkers[2].lat,
+                          selectedMarkers[2].lon
+                        ))}
+                        {' / '}
+                        {formatDistance(calculateDistance(
+                          selectedMarkers[0].lat,
+                          selectedMarkers[0].lon,
+                          selectedMarkers[2].lat,
+                          selectedMarkers[2].lon
+                        ))}
+                      </>
+                    )}
                   </div>
                   {traceLoading && (
                     <div className="terrain-loading">
@@ -134,18 +170,22 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                       Calculating terrain...
                     </div>
                   )}
-                  {traceData && !traceLoading && (
-                    <>
-                      <TerrainGraph
-                        traceData={traceData}
-                        fromElevation={selectedMarkers[0].elevation}
-                        toElevation={selectedMarkers[1].elevation}
-                        fromLabel={selectedMarkers[0].label}
-                        toLabel={selectedMarkers[1].label}
-                        onExpand={onExpandGraph}
-                      />
-                     </>
-                    )}
+                  {traceResults.length > 0 && !traceLoading && (
+                    <div className="los-graphs-container">
+                      {traceResults.map((result, idx) => (
+                        <div key={idx} className="los-graph-item">
+                          <TerrainGraph
+                            traceData={result.traceData}
+                            fromElevation={result.fromElevation}
+                            toElevation={result.toElevation}
+                            fromLabel={result.fromLabel}
+                            toLabel={result.toLabel}
+                            onExpand={() => onExpandGraph(idx)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>

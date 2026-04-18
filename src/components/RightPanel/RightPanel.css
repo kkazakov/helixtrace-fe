@@ -221,6 +221,22 @@
   color: var(--text-primary);
 }
 
+.los-graphs-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.los-graph-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.los-graph-item:last-child {
+  border-bottom: none;
+}
+
 .panel-devices-empty {
   display: flex;
   flex-direction: column;

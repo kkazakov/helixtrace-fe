@@ -369,7 +369,7 @@ function ElevationLabel({ point }: { point: Point }) {
   return null;
 }
 
-function TempLosMarker({ position, label, onDragEnd }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void }) {
+function TempLosMarker({ position, label, onDragEnd, onRemove }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
   const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
@@ -388,15 +388,12 @@ function TempLosMarker({ position, label, onDragEnd }: { position: [number, numb
           const pos = marker.getLatLng();
           onDragEnd(pos.lat, pos.lng);
         },
+        click: () => {
+          onRemove();
+        },
       }}
       ref={markerRef}
-    >
-      <Popup className="custom-popup" autoClose={false} closeOnClick={false}>
-        <div className="point-popup">
-          <div className="point-popup-label">{label}</div>
-        </div>
-      </Popup>
-    </Marker>
+    />
   );
 }
 
@@ -411,10 +408,11 @@ interface MapViewProps {
   selectedMarkers: Point[];
   onMarkerDrag?: (id: string, lat: number, lon: number) => void;
   onAddLosPoint: (lat: number, lon: number) => void;
+  onMarkerRemove?: (id: string) => void;
   traceResults: TraceResult[];
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, traceResults }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, onMarkerRemove, traceResults }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -624,6 +622,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 position={[marker.lat, marker.lon]}
                 label={marker.label}
                 onDragEnd={(lat, lon) => onMarkerDrag?.(marker.id, lat, lon)}
+                onRemove={() => onMarkerRemove?.(marker.id)}
               />
             );
           }

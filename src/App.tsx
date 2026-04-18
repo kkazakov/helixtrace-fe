@@ -161,6 +161,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
           selectedMarkers={selectedMarkers}
           onMarkerDrag={handleMarkerDrag}
           onAddLosPoint={handleAddLosPoint}
+          onMarkerRemove={handleMarkerRemove}
           traceResults={traceResults}
         />
       </div>

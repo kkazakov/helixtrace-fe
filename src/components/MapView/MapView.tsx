@@ -6,7 +6,7 @@ import './MapView.css';
 import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
 import { listPoints, createPoint, getPointDetails, deletePoint, updatePoint, getStoredAuth, type Point } from '../../services/auth';
 import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
-import { getCategoryIcon } from '../../services/pointCategories';
+import { getCategoryIcon, POINT_CATEGORIES } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
 function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[] }) {
@@ -50,6 +50,11 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
           <span class="point-popup-key">Visibility:</span>
           <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
         </div>
+        ${point.category_id !== 3 ? `
+        <div class="point-popup-row">
+          <span class="point-popup-key">Type:</span>
+          <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+        </div>` : ''}
       </div>`
     );
 
@@ -91,6 +96,11 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                     <span class="point-popup-key">Visibility:</span>
                     <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
                   </div>
+                  ${point.category_id !== 3 ? `
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">Type:</span>
+                    <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+                  </div>` : ''}
                   <div class="point-popup-row">
                     <span class="point-popup-key">User:</span>
                     <span class="point-popup-value">${data.user}</span>
@@ -167,16 +177,18 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
   return (
     <Marker
       position={position}
-      icon={getCategoryIcon(point.category_id, isSelectedForLos)}
+      icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos)}
       eventHandlers={{
         click: handleClick,
-        dragend: lineOfSightMode && isSelectedForLos && onMarkerDrag
-          ? (e) => {
-              const marker = e.target as L.Marker;
-              const pos = marker.getLatLng();
-              onMarkerDrag(point.id, pos.lat, pos.lng);
+        ...(lineOfSightMode && isSelectedForLos && onMarkerDrag
+          ? {
+              dragend: (e: any) => {
+                const marker = e.target as L.Marker;
+                const pos = marker.getLatLng();
+                onMarkerDrag(point.id, pos.lat, pos.lng);
+              },
             }
-          : undefined,
+          : {}),
       }}
       draggable={lineOfSightMode && isSelectedForLos}
       ref={markerRef}
@@ -539,7 +551,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
           return null;
         })}
         {lineOfSightMode && selectedMarkers.map(marker => {
-          if (points.some(p => p.id === marker.id)) {
+          if (marker.elevation && marker.elevation > 0) {
             return <ElevationLabel key={`elev-${marker.id}`} point={marker} />;
           }
           return null;

@@ -14,7 +14,7 @@ export function AddPointDialog({ lat, lon, editableCoords = false, onSave, onCan
   const [latVal, setLatVal] = useState(lat.toFixed(6));
   const [lonVal, setLonVal] = useState(lon.toFixed(6));
   const [label, setLabel] = useState('');
-  const [categoryId, setCategoryId] = useState(1);
+   const [categoryId, setCategoryId] = useState(3);
   const [isPublic, setIsPublic] = useState(false);
 
   const handleSave = () => {
@@ -75,11 +75,12 @@ export function AddPointDialog({ lat, lon, editableCoords = false, onSave, onCan
           <div className="add-point-field">
             <label htmlFor="point-category">Category</label>
             <select
-              id="point-category"
-              className="add-point-input"
-              value={categoryId}
-              onChange={e => setCategoryId(Number(e.target.value))}
-            >
+               id="point-category"
+               className="add-point-input"
+               value={categoryId}
+               onChange={e => setCategoryId(Number(e.target.value))}
+               onClick={e => e.stopPropagation()}
+             >
               {POINT_CATEGORIES.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.label}</option>
               ))}

@@ -101,10 +101,11 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                     <span class="point-popup-key">Type:</span>
                     <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
                   </div>` : ''}
+                  ${data.user ? `
                   <div class="point-popup-row">
                     <span class="point-popup-key">User:</span>
                     <span class="point-popup-value">${data.user}</span>
-                  </div>
+                  </div>` : ''}
                   ${isOwner ? `
                     <hr class="popup-separator">
                     <div class="point-popup-row action-row">

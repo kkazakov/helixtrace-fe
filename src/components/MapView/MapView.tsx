@@ -4,11 +4,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
-import { listPoints, createPoint, getPointDetails, type Point } from '../../services/auth';
+import { listPoints, createPoint, getPointDetails, deletePoint, getStoredAuth, type Point } from '../../services/auth';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
-function PointMarker({ point, isSelected, onSelect }: { point: Point; isSelected: boolean; onSelect: (id: string) => void }) {
+function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; currentUser: string | null; onPointDeleted: (id: string) => void }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -53,30 +53,52 @@ function PointMarker({ point, isSelected, onSelect }: { point: Point; isSelected
       markerRef.current.openPopup();
       getPointDetails(point.id)
         .then(data => {
-          const popup = popupRef.current;
-          if (popup) {
-            popup.setContent(
-              `<div class="point-popup">
-                <div class="point-popup-label">${point.label}</div>
-                <div class="point-popup-row">
-                  <span class="point-popup-key">Lat:</span>
-                  <span class="point-popup-value">${point.lat.toFixed(6)}</span>
-                </div>
-                <div class="point-popup-row">
-                  <span class="point-popup-key">Lon:</span>
-                  <span class="point-popup-value">${point.lon.toFixed(6)}</span>
-                </div>
-                <div class="point-popup-row">
-                  <span class="point-popup-key">Visibility:</span>
-                  <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
-                </div>
-                <div class="point-popup-row">
-                  <span class="point-popup-key">User:</span>
-                  <span class="point-popup-value">${data.user}</span>
-                </div>
-              </div>`
-            );
-          }
+          const isOwner = data.user === currentUser;
+          setTimeout(() => {
+            const popupEl = popupRef.current?.getElement();
+            if (!popupEl) return;
+            const contentEl = popupEl.querySelector('.leaflet-popup-content');
+            if (contentEl) {
+              contentEl.innerHTML =
+                `<div class="point-popup">
+                  <div class="point-popup-label">${point.label}</div>
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">Lat:</span>
+                    <span class="point-popup-value">${point.lat.toFixed(6)}</span>
+                  </div>
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">Lon:</span>
+                    <span class="point-popup-value">${point.lon.toFixed(6)}</span>
+                  </div>
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">Visibility:</span>
+                    <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
+                  </div>
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">User:</span>
+                    <span class="point-popup-value">${data.user}</span>
+                  </div>
+                  ${isOwner ? `
+                    <hr class="popup-separator">
+                    <div class="point-popup-row delete-row">
+                      <span></span>
+                      <svg class="trash-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </div>` : ''}
+                </div>`;
+              if (isOwner) {
+                const trashIcon = popupEl.querySelector('.trash-icon');
+                trashIcon?.addEventListener('click', () => {
+                  if (confirm('Are you sure you want to remove the marker?')) {
+                    onPointDeleted(point.id);
+                  }
+                });
+              }
+            }
+          }, 50);
         })
         .catch(() => {});
     }
@@ -207,6 +229,8 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
+  const auth = getStoredAuth();
+  const currentUser = auth.email;
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -273,6 +297,19 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
     await savePoint(lat, lon, label, categoryId, isPublic);
   }, [onCancelCoordsDialog, savePoint]);
 
+  const handlePointDeleted = useCallback(async (id: string) => {
+    try {
+      await deletePoint(id);
+      setPoints(prev => prev.filter(p => p.id !== id));
+      setSelectedPointId(null);
+      showToast('Marker removed', 'success');
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
+  }, [showToast]);
+
   return (
     <div className={`map-view${addPointMode ? ' map-view-crosshair' : ''}`}>
       <MapContainer
@@ -295,6 +332,8 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
             point={point}
             isSelected={selectedPointId === point.id}
             onSelect={setSelectedPointId}
+            currentUser={currentUser}
+            onPointDeleted={handlePointDeleted}
           />
         ))}
       </MapContainer>

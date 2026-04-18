@@ -157,4 +157,14 @@ export async function createPoint(payload: CreatePointPayload): Promise<Point> {
   return res.json();
 }
 
+export async function deletePoint(pointId: string): Promise<void> {
+  const res = await authenticatedFetch(`${API_BASE}/api/point/${pointId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to delete point: ${res.status}`);
+  }
+}
+
 export { getStoredAuth, storeAuth, clearAuth };

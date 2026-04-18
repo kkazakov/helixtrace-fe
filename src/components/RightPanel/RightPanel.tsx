@@ -144,18 +144,8 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                         toLabel={selectedMarkers[1].label}
                         onExpand={onExpandGraph}
                       />
-                      <div className="los-legend">
-                        <div className="los-legend-item">
-                          <div className="los-legend-line terrain" />
-                          <span>Terrain</span>
-                        </div>
-                        <div className="los-legend-item">
-                          <div className="los-legend-line los" />
-                          <span>Line of sight</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                     </>
+                    )}
                 </>
               )}
             </div>

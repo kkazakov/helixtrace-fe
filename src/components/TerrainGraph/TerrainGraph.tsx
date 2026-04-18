@@ -338,7 +338,7 @@ function renderSmallGraph(
 }
 
 export function TerrainGraph({ traceData, fromElevation, toElevation, fromLabel, toLabel, onExpand }: TerrainGraphProps) {
-  const dims = { width: 320, height: 160, top: 24, right: 48, bottom: 36, left: 48 };
+  const dims = { width: 320, height: 160, top: 24, right: 48, bottom: 36, left: 24 };
   const { terrainPath, losPath, blockedPaths, clearPaths, xScale, yScale, yTicks, xTicks } = renderSmallGraph(traceData, fromElevation, toElevation, dims);
 
   return (
@@ -363,7 +363,7 @@ export function TerrainGraph({ traceData, fromElevation, toElevation, fromLabel,
               <text x={dims.left - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
                 {tick}
               </text>
-              <text x={dims.width - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
+              <text x={dims.width - 10} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
                 {tick}
               </text>
             </g>

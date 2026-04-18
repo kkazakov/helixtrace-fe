@@ -197,6 +197,17 @@ const userIcon = L.divIcon({
   popupAnchor: [0, -28],
 });
 
+const losTempIcon = L.divIcon({
+  className: 'custom-marker los-temp-marker',
+  html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 18 10 18s10-11 10-18C20 4.477 15.523 0 10 0z" fill="#e53935"/>
+    <circle cx="10" cy="10" r="3.5" fill="#fff"/>
+  </svg>`,
+  iconSize: [20, 28],
+  iconAnchor: [10, 28],
+  popupAnchor: [0, -28],
+});
+
 function LocationMarker({ onLocationFound }: { onLocationFound: (pos: [number, number]) => void }) {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const map = useMap();
@@ -322,6 +333,37 @@ function ElevationLabel({ point }: { point: Point }) {
   return null;
 }
 
+function TempLosMarker({ position, label, onDragEnd }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void }) {
+  const markerRef = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    if (!markerRef.current) return;
+    markerRef.current.setLatLng(position);
+  }, [position]);
+
+  return (
+    <Marker
+      position={position}
+      icon={losTempIcon}
+      draggable
+      eventHandlers={{
+        dragend: (e) => {
+          const marker = e.target as L.Marker;
+          const pos = marker.getLatLng();
+          onDragEnd(pos.lat, pos.lng);
+        },
+      }}
+      ref={markerRef}
+    >
+      <Popup className="custom-popup" autoClose={false} closeOnClick={false}>
+        <div className="point-popup">
+          <div className="point-popup-label">{label}</div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
 interface MapViewProps {
   addPointMode: boolean;
   onCancelAddPoint: () => void;
@@ -332,9 +374,10 @@ interface MapViewProps {
   lineOfSightMode: boolean;
   selectedMarkers: Point[];
   onMarkerDrag?: (id: string, lat: number, lon: number) => void;
+  onAddLosPoint: (lat: number, lon: number) => void;
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -364,10 +407,12 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const handleMapClick = useCallback((pos: [number, number]) => {
     if (addPointMode) {
       setPendingPoint({ lat: pos[0], lon: pos[1] });
+    } else if (lineOfSightMode) {
+      onAddLosPoint(pos[0], pos[1]);
     } else {
       setSelectedPointId(null);
     }
-  }, [addPointMode]);
+  }, [addPointMode, lineOfSightMode, onAddLosPoint]);
 
   const handleDialogCancel = useCallback(() => {
     setPendingPoint(null);
@@ -447,7 +492,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   }, []);
 
   return (
-    <div className={`map-view${addPointMode ? ' map-view-crosshair' : ''}`}>
+    <div className={`map-view${(addPointMode || lineOfSightMode) ? ' map-view-crosshair' : ''}`}>
       <MapContainer
         center={[42.6977, 23.3215]}
         zoom={12}
@@ -479,9 +524,26 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
               />
         ))}
         {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} />}
-        {lineOfSightMode && selectedMarkers.map(marker => (
-          <ElevationLabel key={marker.id} point={marker} />
-        ))}
+        {lineOfSightMode && selectedMarkers.map((marker, idx) => {
+          const isExisting = points.some(p => p.id === marker.id);
+          if (!isExisting) {
+            return (
+              <TempLosMarker
+                key={`temp-${idx}`}
+                position={[marker.lat, marker.lon]}
+                label={marker.label}
+                onDragEnd={(lat, lon) => onMarkerDrag?.(marker.id, lat, lon)}
+              />
+            );
+          }
+          return null;
+        })}
+        {lineOfSightMode && selectedMarkers.map(marker => {
+          if (points.some(p => p.id === marker.id)) {
+            return <ElevationLabel key={`elev-${marker.id}`} point={marker} />;
+          }
+          return null;
+        })}
       </MapContainer>
       {pendingPoint && (
         <AddPointDialog

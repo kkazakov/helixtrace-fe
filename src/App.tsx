@@ -55,6 +55,23 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     });
   };
 
+  const handleAddLosPoint = (lat: number, lon: number) => {
+    setSelectedMarkers(prev => {
+      if (prev.length >= 2) return prev;
+      const idx = prev.length + 1;
+      const tempPoint: Point = {
+        id: `temp-los-${idx}-${Date.now()}`,
+        lat,
+        lon,
+        elevation: 0,
+        label: `Point ${idx}`,
+        category_id: 3,
+        public: false,
+      };
+      return [...prev, tempPoint];
+    });
+  };
+
   useEffect(() => {
     if (selectedMarkers.length === 2) {
       setTraceLoading(true);
@@ -88,6 +105,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
           lineOfSightMode={lineOfSightMode}
           selectedMarkers={selectedMarkers}
           onMarkerDrag={handleMarkerDrag}
+          onAddLosPoint={handleAddLosPoint}
         />
       </div>
       <div className="dashboard-panel">

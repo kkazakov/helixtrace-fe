@@ -9,11 +9,13 @@ import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
-function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[] }) {
+function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[] }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
   const isSelectedForLos = selectedMarkerIds.includes(point.id);
+  const selectedMarker = selectedMarkers.find(m => m.id === point.id);
+  const position: [number, number] = selectedMarker ? [selectedMarker.lat, selectedMarker.lon] : [point.lat, point.lon];
 
   useEffect(() => {
     if (!markerRef.current) return;
@@ -164,9 +166,19 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
 
   return (
     <Marker
-      position={[point.lat, point.lon]}
+      position={position}
       icon={getCategoryIcon(point.category_id, isSelectedForLos)}
-      eventHandlers={{ click: handleClick }}
+      eventHandlers={{
+        click: handleClick,
+        dragend: lineOfSightMode && isSelectedForLos && onMarkerDrag
+          ? (e) => {
+              const marker = e.target as L.Marker;
+              const pos = marker.getLatLng();
+              onMarkerDrag(point.id, pos.lat, pos.lng);
+            }
+          : undefined,
+      }}
+      draggable={lineOfSightMode && isSelectedForLos}
       ref={markerRef}
     />
   );
@@ -319,9 +331,10 @@ interface MapViewProps {
   onMarkerSelect: (point: Point) => void;
   lineOfSightMode: boolean;
   selectedMarkers: Point[];
+  onMarkerDrag?: (id: string, lat: number, lon: number) => void;
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -461,6 +474,8 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 onPointEdited={setEditingPoint}
                 lineOfSightMode={lineOfSightMode}
                 selectedMarkerIds={selectedMarkers.map(m => m.id)}
+                onMarkerDrag={onMarkerDrag}
+                selectedMarkers={selectedMarkers}
               />
         ))}
         {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} />}

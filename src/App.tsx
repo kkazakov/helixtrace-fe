@@ -46,6 +46,15 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     setSelectedMarkers(prev => prev.filter(m => m.id !== id));
   };
 
+  const handleMarkerDrag = (id: string, lat: number, lon: number) => {
+    setSelectedMarkers(prev => {
+      const updated = prev.map(m =>
+        m.id === id ? { ...m, lat, lon } : m
+      );
+      return updated;
+    });
+  };
+
   useEffect(() => {
     if (selectedMarkers.length === 2) {
       setTraceLoading(true);
@@ -78,6 +87,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
           onMarkerSelect={handleMarkerSelect}
           lineOfSightMode={lineOfSightMode}
           selectedMarkers={selectedMarkers}
+          onMarkerDrag={handleMarkerDrag}
         />
       </div>
       <div className="dashboard-panel">

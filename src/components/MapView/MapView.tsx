@@ -317,13 +317,29 @@ function LineOfSightLine({ selectedMarkers, mapLayer, traceResults }: { selected
         );
       }
 
+      const numEdges = edges.length;
+      const clearCount = traceResults.filter(r => r.losStatus === 'clear').length;
+
       edges.forEach((edge, i) => {
         const status = traceResults[i]?.losStatus ?? 'unknown';
+        let dashArray: string | undefined;
+
+        if (numEdges === 1) {
+          if (status === 'blocked') {
+            dashArray = '8, 6';
+          }
+        } else if (numEdges === 3) {
+          if (clearCount < 2) {
+            dashArray = '8, 6';
+          }
+        }
+
         const polyline = L.polyline(edge, {
           color: getLineColor(status),
           weight: 3,
           opacity: 0.8,
           className: 'los-line',
+          dashArray,
         }).addTo(map);
         polylinesRef.current.push(polyline);
       });

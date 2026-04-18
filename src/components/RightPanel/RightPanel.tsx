@@ -15,10 +15,11 @@ interface RightPanelProps {
   onMarkerRemove: (id: string) => void;
   traceData: TraceResponse | null;
   traceLoading: boolean;
+  losStatus: 'unknown' | 'clear' | 'blocked';
   onExpandGraph: () => void;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading, onExpandGraph }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading, losStatus: _losStatus, onExpandGraph }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {

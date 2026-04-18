@@ -6,6 +6,7 @@ import { RightPanel } from './components/RightPanel/RightPanel';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
 import { getStoredAuth, type Point, type TraceResponse, getElevationInfo } from './services/auth';
 import { tracePath } from './services/auth';
+import { computeLOSStatus, type LOSStatus } from './lib/los';
 import { ToastProvider } from './context/ToastContext';
 import { useToast } from './context/ToastContext';
 import { TerrainGraphExpanded } from './components/TerrainGraph';
@@ -18,6 +19,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
   const [lineOfSightMode, setLineOfSightMode] = useState(false);
   const [selectedMarkers, setSelectedMarkers] = useState<Point[]>([]);
   const [traceData, setTraceData] = useState<TraceResponse | null>(null);
+  const [losStatus, setLosStatus] = useState<LOSStatus>('unknown');
   const [traceLoading, setTraceLoading] = useState(false);
   const [expandedGraph, setExpandedGraph] = useState(false);
 
@@ -26,6 +28,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     if (lineOfSightMode) {
       setSelectedMarkers([]);
       setTraceData(null);
+      setLosStatus('unknown');
     }
   };
 
@@ -97,6 +100,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
       tracePath(from.lat, from.lon, to.lat, to.lon)
         .then(data => {
           setTraceData(data);
+          setLosStatus(computeLOSStatus(data, from.elevation, to.elevation));
           setTraceLoading(false);
         })
         .catch(err => {
@@ -107,6 +111,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
         });
     } else {
       setTraceData(null);
+      setLosStatus('unknown');
     }
   }, [selectedMarkers, showToast]);
 
@@ -124,6 +129,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
           selectedMarkers={selectedMarkers}
           onMarkerDrag={handleMarkerDrag}
           onAddLosPoint={handleAddLosPoint}
+          losStatus={losStatus}
         />
       </div>
       <div className="dashboard-panel">
@@ -138,6 +144,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
             onMarkerRemove={handleMarkerRemove}
             traceData={traceData}
             traceLoading={traceLoading}
+            losStatus={losStatus}
             onExpandGraph={() => setExpandedGraph(true)}
           />
         </div>

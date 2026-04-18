@@ -11,7 +11,7 @@ import { useToast } from '../../context/ToastContext';
 import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
 import { useTheme } from '../../hooks/useTheme';
 
-function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
+function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer: _mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -270,15 +270,25 @@ function MapCenterTracker({ onCenterChange }: { onCenterChange: (center: [number
   return null;
 }
 
-function LineOfSightLine({ selectedMarkers, mapLayer }: { selectedMarkers: Point[]; mapLayer: string }) {
+function LineOfSightLine({ selectedMarkers, mapLayer, losStatus }: { selectedMarkers: Point[]; mapLayer: string; losStatus: 'unknown' | 'clear' | 'blocked' }) {
   const map = useMap();
   const polylineRef = useRef<L.Polyline | null>(null);
+
+  const getLineColor = () => {
+    if (losStatus === 'clear') {
+      return mapLayer === 'esri' ? '#81c784' : '#2e7d32';
+    }
+    if (losStatus === 'blocked') {
+      return '#d32f2f';
+    }
+    return mapLayer === 'esri' ? '#bdbdbd' : '#555555';
+  };
 
   useEffect(() => {
     if (selectedMarkers.length === 2) {
       const latlngs = selectedMarkers.map(m => [m.lat, m.lon] as [number, number]);
       const polyline = L.polyline(latlngs, {
-        color: mapLayer === 'esri' ? '#ff0000' : '#555555',
+        color: getLineColor(),
         weight: 3,
         opacity: 0.8,
         className: 'los-line',
@@ -295,7 +305,7 @@ function LineOfSightLine({ selectedMarkers, mapLayer }: { selectedMarkers: Point
         polylineRef.current = null;
       }
     }
-  }, [selectedMarkers, mapLayer, map]);
+  }, [selectedMarkers, mapLayer, losStatus, map]);
 
   return null;
 }
@@ -373,9 +383,10 @@ interface MapViewProps {
   selectedMarkers: Point[];
   onMarkerDrag?: (id: string, lat: number, lon: number) => void;
   onAddLosPoint: (lat: number, lon: number) => void;
+  losStatus: 'unknown' | 'clear' | 'blocked';
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, losStatus }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -575,7 +586,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 mapLayer={mapLayer}
               />
         ))}
-        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} mapLayer={mapLayer} />}
+        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} mapLayer={mapLayer} losStatus={losStatus} />}
         {lineOfSightMode && selectedMarkers.map((marker, idx) => {
           const isExisting = points.some(p => p.id === marker.id);
           if (!isExisting) {

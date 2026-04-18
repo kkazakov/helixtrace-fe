@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
@@ -385,7 +385,7 @@ function ElevationLabel({ point }: { point: Point }) {
   return null;
 }
 
-function TempLosMarker({ position, label, onDragEnd, onRemove }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
+function TempLosMarker({ position, label: _label, onDragEnd, onRemove }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
   const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {

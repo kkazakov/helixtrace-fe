@@ -144,6 +144,23 @@
   cursor: not-allowed;
 }
 
+.login-link {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 400;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.login-link:hover {
+  color: var(--accent);
+}
+
 .login-spinner {
   display: inline-block;
   width: 16px;

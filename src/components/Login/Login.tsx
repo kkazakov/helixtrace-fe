@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { login, storeAuth } from '../../services/auth';
+import { login, register, storeAuth } from '../../services/auth';
 import { ThemeToggle } from '../ThemeToggle/ThemeToggle';
 import './Login.css';
 
 export function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +17,12 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
 
     try {
-      const response = await login({ email, password });
+      let response;
+      if (mode === 'register') {
+        response = await register({ email, password, username });
+      } else {
+        response = await login({ email, password });
+      }
       storeAuth({
         token: response.token,
         email: response.email,
@@ -24,7 +31,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
       });
       onLogin();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : (mode === 'register' ? 'Registration failed' : 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -76,10 +83,25 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              autoComplete="current-password"
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               required
             />
           </div>
+
+          {mode === 'register' && (
+            <div className="login-field">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="wasp"
+                autoComplete="username"
+                required
+              />
+            </div>
+          )}
 
           {error && <div className="login-error">{error}</div>}
 
@@ -87,8 +109,19 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
             {loading ? (
               <span className="login-spinner" />
             ) : (
-              'Sign in'
+              mode === 'register' ? 'Register' : 'Sign in'
             )}
+          </button>
+
+          <button
+            type="button"
+            className="login-link"
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login');
+              setError('');
+            }}
+          >
+            {mode === 'login' ? 'Register' : 'Back to Sign in'}
           </button>
         </form>
       </div>

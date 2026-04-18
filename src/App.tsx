@@ -158,7 +158,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 function App() {
-  const handleLogout = () => {};
+  const handleLogout = () => {
+    window.location.href = '/login';
+  };
 
   return (
     <BrowserRouter>

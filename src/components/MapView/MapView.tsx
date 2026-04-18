@@ -8,6 +8,7 @@ import { listPoints, createPoint, getPointDetails, deletePoint, updatePoint, get
 import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon, POINT_CATEGORIES } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
+import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
 
 function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[] }) {
   const markerRef = useRef<L.Marker>(null);
@@ -397,6 +398,10 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; label: string; category_id: number; public: boolean } | null>(null);
+  const [mapLayer, setMapLayer] = useState<'osm' | 'opentopomap'>(() => {
+    const stored = localStorage.getItem('helixtrace_maplayer') as 'osm' | 'opentopomap' | null;
+    return stored || 'opentopomap';
+  });
   const auth = getStoredAuth();
   const currentUser = auth.email;
   const { showToast } = useToast();
@@ -513,13 +518,18 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={mapLayer === 'opentopomap'
+            ? '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
+          url={mapLayer === 'opentopomap'
+            ? "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
         />
         <LocationMarker onLocationFound={handleLocationFound} />
         <MapClickHandler onMapClick={handleMapClick} />
         <MapCenter center={centerOn} />
         <MapCenterTracker onCenterChange={setMapCenter} />
+        <MapLayerToggle onLayerChange={setMapLayer} />
        {points.map(point => (
            <PointMarker
                 key={point.id}

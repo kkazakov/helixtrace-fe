@@ -11,7 +11,7 @@ import { useToast } from '../../context/ToastContext';
 import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
 import { useTheme } from '../../hooks/useTheme';
 
-function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[] }) {
+function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -183,7 +183,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
       icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos)}
       eventHandlers={{
         click: handleClick,
-        ...(lineOfSightMode && isSelectedForLos && onMarkerDrag
+        ...(lineOfSightMode && isSelectedForLos && onMarkerDrag && point.id.startsWith('temp-los-')
           ? {
               dragend: (e: any) => {
                 const marker = e.target as L.Marker;
@@ -193,7 +193,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
             }
           : {}),
       }}
-      draggable={lineOfSightMode && isSelectedForLos}
+      draggable={lineOfSightMode && isSelectedForLos && onMarkerDrag && point.id.startsWith('temp-los-')}
       ref={markerRef}
     />
   );
@@ -270,7 +270,7 @@ function MapCenterTracker({ onCenterChange }: { onCenterChange: (center: [number
   return null;
 }
 
-function LineOfSightLine({ selectedMarkers }: { selectedMarkers: Point[] }) {
+function LineOfSightLine({ selectedMarkers, mapLayer }: { selectedMarkers: Point[]; mapLayer: string }) {
   const map = useMap();
   const polylineRef = useRef<L.Polyline | null>(null);
 
@@ -278,7 +278,7 @@ function LineOfSightLine({ selectedMarkers }: { selectedMarkers: Point[] }) {
     if (selectedMarkers.length === 2) {
       const latlngs = selectedMarkers.map(m => [m.lat, m.lon] as [number, number]);
       const polyline = L.polyline(latlngs, {
-        color: '#555555',
+        color: mapLayer === 'esri' ? '#ff0000' : '#555555',
         weight: 3,
         opacity: 0.8,
         className: 'los-line',
@@ -295,7 +295,7 @@ function LineOfSightLine({ selectedMarkers }: { selectedMarkers: Point[] }) {
         polylineRef.current = null;
       }
     }
-  }, [selectedMarkers, map]);
+  }, [selectedMarkers, mapLayer, map]);
 
   return null;
 }
@@ -572,9 +572,10 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 selectedMarkerIds={selectedMarkers.map(m => m.id)}
                 onMarkerDrag={onMarkerDrag}
                 selectedMarkers={selectedMarkers}
+                mapLayer={mapLayer}
               />
         ))}
-        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} />}
+        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} mapLayer={mapLayer} />}
         {lineOfSightMode && selectedMarkers.map((marker, idx) => {
           const isExisting = points.some(p => p.id === marker.id);
           if (!isExisting) {

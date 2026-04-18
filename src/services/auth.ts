@@ -109,7 +109,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
   return res;
 }
 
-export async function listPoints(includePublic = false): Promise<Point[]> {
+export async function listPoints(includePublic = true): Promise<Point[]> {
   const res = await authenticatedFetch(
     `${API_BASE}/api/points?include_public=${includePublic}`
   );

@@ -146,6 +146,69 @@
   flex-shrink: 0;
 }
 
+.los-container {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.los-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.los-marker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.los-marker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.los-marker-label {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.los-marker-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.los-marker-remove:hover {
+  background: var(--error-light);
+  color: var(--error);
+}
+
 .panel-devices-empty {
   display: flex;
   flex-direction: column;

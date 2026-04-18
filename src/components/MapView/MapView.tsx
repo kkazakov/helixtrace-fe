@@ -9,7 +9,7 @@ import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
-function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted, onPointEdited }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void }) {
+function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -142,6 +142,9 @@ function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted,
 
   const handleClick = () => {
     onSelect(point.id);
+    if (lineOfSightMode) {
+      onMarkerSelect(point);
+    }
   };
 
   return (
@@ -237,9 +240,11 @@ interface MapViewProps {
   onPointAdded: () => void;
   showCoordsDialog: boolean;
   onCancelCoordsDialog: () => void;
+  onMarkerSelect: (point: Point) => void;
+  lineOfSightMode: boolean;
 }
 
-export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog }: MapViewProps) {
+export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
@@ -367,16 +372,18 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         <MapClickHandler onMapClick={handleMapClick} />
         <MapCenter center={centerOn} />
         <MapCenterTracker onCenterChange={setMapCenter} />
-        {points.map(point => (
-         <PointMarker
-              key={point.id}
-              point={point}
-              isSelected={selectedPointId === point.id}
-              onSelect={setSelectedPointId}
-              currentUser={currentUser}
-              onPointDeleted={handlePointDeleted}
-              onPointEdited={setEditingPoint}
-            />
+       {points.map(point => (
+          <PointMarker
+               key={point.id}
+               point={point}
+               isSelected={selectedPointId === point.id}
+               onSelect={setSelectedPointId}
+               onMarkerSelect={onMarkerSelect}
+               currentUser={currentUser}
+               onPointDeleted={handlePointDeleted}
+               onPointEdited={setEditingPoint}
+               lineOfSightMode={lineOfSightMode}
+             />
         ))}
       </MapContainer>
       {pendingPoint && (

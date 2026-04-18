@@ -1,0 +1,63 @@
+.terrain-graph {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.terrain-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.terrain-loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: terrain-spin 0.8s linear infinite;
+}
+
+@keyframes terrain-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.los-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.los-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.los-legend-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.los-legend-line.terrain {
+  background: var(--accent);
+}
+
+.los-legend-line.los {
+  background: #d32f2f;
+  border-top: 2px dashed #d32f2f;
+  background: transparent;
+  height: 0;
+}

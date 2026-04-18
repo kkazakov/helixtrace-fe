@@ -1,6 +1,7 @@
-import { getStoredAuth, clearAuth, type Point } from '../../services/auth';
+import { getStoredAuth, clearAuth, type Point, type TraceResponse } from '../../services/auth';
 import { ThemeToggle } from '../ThemeToggle/ThemeToggle';
 import { calculateDistance, formatDistance } from '../../services/distance';
+import { TerrainGraph } from '../TerrainGraph';
 import './RightPanel.css';
 
 interface RightPanelProps {
@@ -12,9 +13,11 @@ interface RightPanelProps {
   onToggleLineOfSight: () => void;
   selectedMarkers: Point[];
   onMarkerRemove: (id: string) => void;
+  traceData: TraceResponse | null;
+  traceLoading: boolean;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -115,14 +118,43 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                 ))}
               </div>
               {selectedMarkers.length === 2 && (
-                <div className="los-distance">
-                  Distance: {formatDistance(calculateDistance(
-                    selectedMarkers[0].lat,
-                    selectedMarkers[0].lon,
-                    selectedMarkers[1].lat,
-                    selectedMarkers[1].lon
-                  ))}
-                </div>
+                <>
+                  <div className="los-distance">
+                    Distance: {formatDistance(calculateDistance(
+                      selectedMarkers[0].lat,
+                      selectedMarkers[0].lon,
+                      selectedMarkers[1].lat,
+                      selectedMarkers[1].lon
+                    ))}
+                  </div>
+                  {traceLoading && (
+                    <div className="terrain-loading">
+                      <div className="terrain-loading-spinner" />
+                      Calculating terrain...
+                    </div>
+                  )}
+                  {traceData && !traceLoading && (
+                    <>
+                      <TerrainGraph
+                        traceData={traceData}
+                        fromElevation={selectedMarkers[0].elevation}
+                        toElevation={selectedMarkers[1].elevation}
+                        fromLabel={selectedMarkers[0].label}
+                        toLabel={selectedMarkers[1].label}
+                      />
+                      <div className="los-legend">
+                        <div className="los-legend-item">
+                          <div className="los-legend-line terrain" />
+                          <span>Terrain</span>
+                        </div>
+                        <div className="los-legend-item">
+                          <div className="los-legend-line los" />
+                          <span>Line of sight</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}

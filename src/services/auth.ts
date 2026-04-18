@@ -180,4 +180,28 @@ export async function updatePoint(pointId: string, payload: Partial<CreatePointP
   return res.json();
 }
 
+export interface TracePoint {
+  lat: number;
+  lng: number;
+  elv: number;
+}
+
+export interface TraceResponse {
+  points: TracePoint[];
+  count: number;
+  distance_between_points: number;
+  status: string;
+}
+
+export async function tracePath(fromLat: number, fromLng: number, toLat: number, toLng: number): Promise<TraceResponse> {
+  const res = await authenticatedFetch(
+    `${API_BASE}/api/trace-path?from=${fromLat},${fromLng}&to=${toLat},${toLng}`
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to trace path: ${res.status}`);
+  }
+  return res.json();
+}
+
 export { getStoredAuth, storeAuth, clearAuth };

@@ -41,6 +41,10 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
           <span class="point-popup-value">${point.lon.toFixed(6)}</span>
         </div>
         <div class="point-popup-row">
+          <span class="point-popup-key">Elevation:</span>
+          <span class="point-popup-value">${Math.round(point.elevation)}m</span>
+        </div>
+        <div class="point-popup-row">
           <span class="point-popup-key">Visibility:</span>
           <span class="point-popup-value">${point.public ? 'Public' : 'Private'}</span>
         </div>
@@ -76,6 +80,10 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                   <div class="point-popup-row">
                     <span class="point-popup-key">Lon:</span>
                     <span class="point-popup-value">${point.lon.toFixed(6)}</span>
+                  </div>
+                  <div class="point-popup-row">
+                    <span class="point-popup-key">Elevation:</span>
+                    <span class="point-popup-value">${Math.round(point.elevation)}m</span>
                   </div>
                   <div class="point-popup-row">
                     <span class="point-popup-key">Visibility:</span>
@@ -271,6 +279,37 @@ function LineOfSightLine({ selectedMarkers }: { selectedMarkers: Point[] }) {
   return null;
 }
 
+function ElevationLabel({ point }: { point: Point }) {
+  const map = useMap();
+  const labelRef = useRef<L.DivIcon | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    if (!point.elevation || point.elevation === 0) return;
+
+    const icon = L.divIcon({
+      className: 'los-elevation-label',
+      html: `<div class="los-elevation-text">Elevation: ${Math.round(point.elevation)}m</div>`,
+      iconSize: [100, 20],
+      iconAnchor: [50, 0],
+      popupAnchor: [0, 0],
+    });
+
+    const marker = L.marker([point.lat, point.lon], {
+      icon,
+      interactive: false,
+    }).addTo(map);
+    markerRef.current = marker;
+    labelRef.current = icon;
+
+    return () => {
+      map.removeLayer(marker);
+    };
+  }, [point, map]);
+
+  return null;
+}
+
 interface MapViewProps {
   addPointMode: boolean;
   onCancelAddPoint: () => void;
@@ -425,6 +464,9 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
               />
         ))}
         {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} />}
+        {lineOfSightMode && selectedMarkers.map(marker => (
+          <ElevationLabel key={marker.id} point={marker} />
+        ))}
       </MapContainer>
       {pendingPoint && (
         <AddPointDialog

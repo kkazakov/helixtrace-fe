@@ -212,6 +212,15 @@
   color: var(--error);
 }
 
+.los-distance {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .panel-devices-empty {
   display: flex;
   flex-direction: column;

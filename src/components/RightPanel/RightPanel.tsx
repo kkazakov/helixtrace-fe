@@ -47,10 +47,9 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
 
       <div className="panel-user">
         <div className="panel-user-avatar">
-          {auth.username?.charAt(0).toUpperCase()}
+          {auth.email?.charAt(0).toUpperCase()}
         </div>
         <div className="panel-user-info">
-          <span className="panel-user-name">{auth.username}</span>
           <span className="panel-user-email">{auth.email}</span>
         </div>
         <button className="panel-logout" onClick={handleLogout} aria-label="Logout">

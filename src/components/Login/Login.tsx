@@ -7,7 +7,6 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,14 +18,13 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
     try {
       let response;
       if (mode === 'register') {
-        response = await register({ email, password, username });
+        response = await register({ email, password });
       } else {
         response = await login({ email, password });
       }
       storeAuth({
         token: response.token,
         email: response.email,
-        username: response.username,
         isAuthenticated: true,
       });
       onLogin();
@@ -87,21 +85,6 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
               required
             />
           </div>
-
-          {mode === 'register' && (
-            <div className="login-field">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="wasp"
-                autoComplete="username"
-                required
-              />
-            </div>
-          )}
 
           {error && <div className="login-error">{error}</div>}
 

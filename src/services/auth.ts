@@ -8,19 +8,16 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   email: string;
   password: string;
-  username: string;
 }
 
 export interface AuthResponse {
   token: string;
   email: string;
-  username: string;
 }
 
 export interface AuthState {
   token: string | null;
   email: string | null;
-  username: string | null;
   isAuthenticated: boolean;
 }
 
@@ -47,11 +44,11 @@ const STORAGE_KEY = 'helixtrace_auth';
 function getStoredAuth(): AuthState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { token: null, email: null, username: null, isAuthenticated: false };
+    if (!raw) return { token: null, email: null, isAuthenticated: false };
     const parsed = JSON.parse(raw);
     return { ...parsed, isAuthenticated: !!parsed.token };
   } catch {
-    return { token: null, email: null, username: null, isAuthenticated: false };
+    return { token: null, email: null, isAuthenticated: false };
   }
 }
 

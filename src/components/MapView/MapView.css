@@ -33,6 +33,10 @@
   stroke-width: 2px !important;
 }
 
+.los-line path {
+  stroke: #555555 !important;
+}
+
 .custom-popup .leaflet-popup-content-wrapper {
   background: var(--bg-secondary);
   color: var(--text-primary);

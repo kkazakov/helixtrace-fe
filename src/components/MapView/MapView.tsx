@@ -241,6 +241,36 @@ function MapCenterTracker({ onCenterChange }: { onCenterChange: (center: [number
   return null;
 }
 
+function LineOfSightLine({ selectedMarkers }: { selectedMarkers: Point[] }) {
+  const map = useMap();
+  const polylineRef = useRef<L.Polyline | null>(null);
+
+  useEffect(() => {
+    if (selectedMarkers.length === 2) {
+      const latlngs = selectedMarkers.map(m => [m.lat, m.lon] as [number, number]);
+      const polyline = L.polyline(latlngs, {
+        color: '#555555',
+        weight: 3,
+        opacity: 0.8,
+        className: 'los-line',
+      }).addTo(map);
+      polylineRef.current = polyline;
+
+      return () => {
+        map.removeLayer(polyline);
+        polylineRef.current = null;
+      };
+    } else {
+      if (polylineRef.current) {
+        map.removeLayer(polylineRef.current);
+        polylineRef.current = null;
+      }
+    }
+  }, [selectedMarkers, map]);
+
+  return null;
+}
+
 interface MapViewProps {
   addPointMode: boolean;
   onCancelAddPoint: () => void;
@@ -394,6 +424,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 selectedMarkerIds={selectedMarkers.map(m => m.id)}
               />
         ))}
+        {lineOfSightMode && <LineOfSightLine selectedMarkers={selectedMarkers} />}
       </MapContainer>
       {pendingPoint && (
         <AddPointDialog

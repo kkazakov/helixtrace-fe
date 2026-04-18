@@ -10,6 +10,7 @@ interface TerrainGraphInnerProps {
   toLabel: string;
   width: number;
   height: number;
+  responsive?: boolean;
 }
 
 function computeSegments(
@@ -154,12 +155,12 @@ function renderGraph(
   return { ...result, yTicks, xTicks };
 }
 
-export function TerrainGraphInner({ traceData, fromElevation, toElevation, fromLabel, toLabel, width, height }: TerrainGraphInnerProps) {
+export function TerrainGraphInner({ traceData, fromElevation, toElevation, fromLabel, toLabel, width, height, responsive }: TerrainGraphInnerProps) {
   const dims = { width, height, top: 24, right: 48, bottom: 36, left: 48 };
   const { terrainPath, losPath, blockedPaths, clearPaths, xScale, yScale, yTicks, xTicks } = renderGraph(traceData, fromElevation, toElevation, dims);
 
   return (
-    <svg width={dims.width} height={dims.height} viewBox={`0 0 ${dims.width} ${dims.height}`} className="terrain-graph">
+    <svg width={responsive ? '100%' : dims.width} height={responsive ? '100%' : dims.height} viewBox={`0 0 ${dims.width} ${dims.height}`} className="terrain-graph">
       <defs>
         <clipPath id={`clip-${fromLabel}-${toLabel}`}>
           <rect x={dims.left} y={dims.top} width={dims.width - dims.left - dims.right} height={dims.height - dims.bottom} />
@@ -174,7 +175,7 @@ export function TerrainGraphInner({ traceData, fromElevation, toElevation, fromL
             <text x={dims.left - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
               {tick}
             </text>
-            <text x={dims.width - dims.right - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
+            <text x={dims.width - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
               {tick}
             </text>
           </g>
@@ -229,15 +230,18 @@ interface TerrainGraphExpandedSVGProps {
 
 export function TerrainGraphExpandedSVG({ traceData, fromElevation, toElevation, fromLabel, toLabel }: TerrainGraphExpandedSVGProps) {
   return (
-    <TerrainGraphInner
-      traceData={traceData}
-      fromElevation={fromElevation}
-      toElevation={toElevation}
-      fromLabel={fromLabel}
-      toLabel={toLabel}
-      width={900}
-      height={450}
-    />
+    <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+      <TerrainGraphInner
+        traceData={traceData}
+        fromElevation={fromElevation}
+        toElevation={toElevation}
+        fromLabel={fromLabel}
+        toLabel={toLabel}
+        width={900}
+        height={450}
+        responsive
+      />
+    </div>
   );
 }
 
@@ -359,7 +363,7 @@ export function TerrainGraph({ traceData, fromElevation, toElevation, fromLabel,
               <text x={dims.left - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
                 {tick}
               </text>
-              <text x={dims.width - dims.right - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
+              <text x={dims.width - 6} y={y + 4} textAnchor="end" fill="var(--text-tertiary)" fontSize="9" fontFamily="var(--font-mono)">
                 {tick}
               </text>
             </g>

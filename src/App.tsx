@@ -46,13 +46,19 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     setSelectedMarkers(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleMarkerDrag = (id: string, lat: number, lon: number) => {
-    setSelectedMarkers(prev => {
-      const updated = prev.map(m =>
-        m.id === id ? { ...m, lat, lon } : m
+  const handleMarkerDrag = async (id: string, lat: number, lon: number) => {
+    try {
+      const info = await getElevationInfo(lat, lon);
+      setSelectedMarkers(prev =>
+        prev.map(m =>
+          m.id === id ? { ...m, lat: info.lat, lon: info.lon, elevation: info.elevation } : m
+        )
       );
-      return updated;
-    });
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
   };
 
   const handleAddLosPoint = async (lat: number, lon: number) => {

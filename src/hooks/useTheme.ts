@@ -18,6 +18,7 @@ export function useTheme() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('helixtrace_theme', theme);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'helixtrace_theme', newValue: theme }));
   }, [theme]);
 
   useEffect(() => {
@@ -30,6 +31,16 @@ export function useTheme() {
     };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === 'helixtrace_theme' && e.newValue && (e.newValue === 'light' || e.newValue === 'dark')) {
+        setTheme(e.newValue as Theme);
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
   }, []);
 
   const toggle = useCallback(() => {

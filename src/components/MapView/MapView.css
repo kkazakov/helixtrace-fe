@@ -117,10 +117,6 @@
   color: var(--text-secondary) !important;
 }
 
-.map-view-crosshair .leaflet-container {
-  cursor: crosshair !important;
-}
-
 .point-popup {
   min-width: 160px;
 }
@@ -216,14 +212,4 @@
 
 .map-view-crosshair .leaflet-container {
   cursor: crosshair !important;
-}
-
-.map-layer-toggle {
-  position: absolute;
-  top: 70px;
-  right: 16px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }

@@ -9,6 +9,7 @@ import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon, POINT_CATEGORIES } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
+import { useTheme } from '../../hooks/useTheme';
 
 function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[] }) {
   const markerRef = useRef<L.Marker>(null);
@@ -200,30 +201,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
-const userIcon = L.divIcon({
-  className: 'custom-marker user-marker',
-  html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 18 10 18s10-11 10-18C20 4.477 15.523 0 10 0z" fill="#2e7d32"/>
-    <circle cx="10" cy="10" r="3.5" fill="#fff"/>
-  </svg>`,
-  iconSize: [20, 28],
-  iconAnchor: [10, 28],
-  popupAnchor: [0, -28],
-});
-
-const losTempIcon = L.divIcon({
-  className: 'custom-marker los-temp-marker',
-  html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 18 10 18s10-11 10-18C20 4.477 15.523 0 10 0z" fill="#e53935"/>
-    <circle cx="10" cy="10" r="3.5" fill="#fff"/>
-  </svg>`,
-  iconSize: [20, 28],
-  iconAnchor: [10, 28],
-  popupAnchor: [0, -28],
-});
-
 function LocationMarker({ onLocationFound }: { onLocationFound: (pos: [number, number]) => void }) {
-  const [position, setPosition] = useState<[number, number] | null>(null);
   const map = useMap();
   const hasLocated = useRef(false);
 
@@ -235,7 +213,6 @@ function LocationMarker({ onLocationFound }: { onLocationFound: (pos: [number, n
       (pos) => {
         const { latitude, longitude } = pos.coords;
         const coords: [number, number] = [latitude, longitude];
-        setPosition(coords);
         map.setView(coords, 14);
         onLocationFound(coords);
       },
@@ -246,12 +223,19 @@ function LocationMarker({ onLocationFound }: { onLocationFound: (pos: [number, n
     );
   }, [map, onLocationFound]);
 
-  return position ? (
-    <Marker position={position} icon={userIcon}>
-      <Popup className="custom-popup">Your location</Popup>
-    </Marker>
-  ) : null;
+  return null;
 }
+
+const losTempIcon = L.divIcon({
+  className: 'custom-marker los-temp-marker',
+  html: `<svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 18 10 18s10-11 10-18C20 4.477 15.523 0 10 0z" fill="#e53935"/>
+    <circle cx="10" cy="10" r="3.5" fill="#fff"/>
+  </svg>`,
+  iconSize: [20, 28],
+  iconAnchor: [10, 28],
+  popupAnchor: [0, -28],
+});
 
 function MapClickHandler({ onMapClick }: { onMapClick: (pos: [number, number]) => void }) {
   useMapEvents({
@@ -398,13 +382,31 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; label: string; category_id: number; public: boolean } | null>(null);
-  const [mapLayer, setMapLayer] = useState<'osm' | 'opentopomap'>(() => {
-    const stored = localStorage.getItem('helixtrace_maplayer') as 'osm' | 'opentopomap' | null;
-    return stored || 'opentopomap';
+  const [mapLayer, setMapLayer] = useState<'osm' | 'opentopomap' | 'stamenterrain' | 'esri' | 'cartodb_positron' | 'cartodb_dark'>(() => {
+    const stored = localStorage.getItem('helixtrace_maplayer');
+    if (stored === 'cartodb') {
+      const storedTheme = localStorage.getItem('helixtrace_theme');
+      return storedTheme === 'dark' ? 'cartodb_dark' : 'cartodb_positron';
+    }
+    if (stored === 'osm' || stored === 'opentopomap' || stored === 'stamenterrain' || stored === 'esri' || stored === 'cartodb_positron' || stored === 'cartodb_dark') {
+      return stored;
+    }
+    return 'opentopomap';
+  });
+  const [isCartoDB, setIsCartoDB] = useState(() => {
+    const stored = localStorage.getItem('helixtrace_maplayer');
+    return stored === 'cartodb';
   });
   const auth = getStoredAuth();
   const currentUser = auth.email;
   const { showToast } = useToast();
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    if (isCartoDB) {
+      setMapLayer(theme === 'dark' ? 'cartodb_dark' : 'cartodb_positron');
+    }
+  }, [theme, isCartoDB]);
 
   useEffect(() => {
     const loadPoints = async () => {
@@ -509,6 +511,15 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
     setEditingPoint(null);
   }, []);
 
+  const handleLayerChange = useCallback((layer: string) => {
+    if (layer === 'cartodb_positron' || layer === 'cartodb_dark') {
+      setIsCartoDB(true);
+    } else {
+      setIsCartoDB(false);
+    }
+    setMapLayer(layer as typeof mapLayer);
+  }, []);
+
   return (
     <div className={`map-view${(addPointMode || lineOfSightMode) ? ' map-view-crosshair' : ''}`}>
       <MapContainer
@@ -518,20 +529,37 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         zoomControl={false}
       >
         <TileLayer
+          key={mapLayer}
           attribution={mapLayer === 'opentopomap'
             ? '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
+            : mapLayer === 'stamenterrain'
+              ? '&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://stamen.com/">Stamen Design</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              : mapLayer === 'esri'
+                ? '&copy; <a href="https://esri.com/">Esri</a>'
+                : mapLayer === 'cartodb_positron'
+                  ? '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  : mapLayer === 'cartodb_dark'
+                    ? '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
           url={mapLayer === 'opentopomap'
             ? "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
+            : mapLayer === 'stamenterrain'
+              ? "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png"
+              : mapLayer === 'esri'
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                : mapLayer === 'cartodb_positron'
+                  ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                  : mapLayer === 'cartodb_dark'
+                    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
         />
         <LocationMarker onLocationFound={handleLocationFound} />
         <MapClickHandler onMapClick={handleMapClick} />
         <MapCenter center={centerOn} />
-        <MapCenterTracker onCenterChange={setMapCenter} />
-        <MapLayerToggle onLayerChange={setMapLayer} />
-       {points.map(point => (
-           <PointMarker
+       <MapCenterTracker onCenterChange={setMapCenter} />
+        <MapLayerToggle onLayerChange={handleLayerChange} />
+        {points.map(point => (
+            <PointMarker
                 key={point.id}
                 point={point}
                 isSelected={selectedPointId === point.id}

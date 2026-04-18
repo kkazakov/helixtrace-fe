@@ -1,63 +1,36 @@
 .terrain-graph {
-  width: 100%;
-  height: auto;
   display: block;
 }
 
-.terrain-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
-  font-size: 12px;
+.terrain-graph-container {
+  position: relative;
+  display: inline-block;
+}
+
+.terrain-expand-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   color: var(--text-tertiary);
-}
-
-.terrain-loading-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border-subtle);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: terrain-spin 0.8s linear infinite;
-}
-
-@keyframes terrain-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.los-legend {
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: 10px;
-  color: var(--text-tertiary);
+  justify-content: center;
+  opacity: 0;
+  transition: all var(--transition-fast);
+  z-index: 1;
 }
 
-.los-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.terrain-graph-container:hover .terrain-expand-btn {
+  opacity: 1;
 }
 
-.los-legend-line {
-  width: 16px;
-  height: 2px;
-  border-radius: 1px;
-}
-
-.los-legend-line.terrain {
-  background: var(--accent);
-}
-
-.los-legend-line.los {
-  background: #d32f2f;
-  border-top: 2px dashed #d32f2f;
-  background: transparent;
-  height: 0;
+.terrain-expand-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }

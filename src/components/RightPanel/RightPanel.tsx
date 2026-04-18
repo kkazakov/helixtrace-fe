@@ -15,9 +15,10 @@ interface RightPanelProps {
   onMarkerRemove: (id: string) => void;
   traceData: TraceResponse | null;
   traceLoading: boolean;
+  onExpandGraph: () => void;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceData, traceLoading, onExpandGraph }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -141,6 +142,7 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                         toElevation={selectedMarkers[1].elevation}
                         fromLabel={selectedMarkers[0].label}
                         toLabel={selectedMarkers[1].label}
+                        onExpand={onExpandGraph}
                       />
                       <div className="los-legend">
                         <div className="los-legend-item">

@@ -8,6 +8,7 @@ import { getStoredAuth, type Point, type TraceResponse } from './services/auth';
 import { tracePath } from './services/auth';
 import { ToastProvider } from './context/ToastContext';
 import { useToast } from './context/ToastContext';
+import { TerrainGraphExpanded } from './components/TerrainGraph';
 import './App.css';
 
 function DashboardInner({ onLogout }: { onLogout: () => void }) {
@@ -18,6 +19,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
   const [selectedMarkers, setSelectedMarkers] = useState<Point[]>([]);
   const [traceData, setTraceData] = useState<TraceResponse | null>(null);
   const [traceLoading, setTraceLoading] = useState(false);
+  const [expandedGraph, setExpandedGraph] = useState(false);
 
   const handleToggleLineOfSight = () => {
     setLineOfSightMode(prev => !prev);
@@ -79,20 +81,31 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
         />
       </div>
       <div className="dashboard-panel">
-        <RightPanel
-          onLogout={onLogout}
-          addPointMode={addPointMode}
-          onToggleAddPoint={() => setAddPointMode(prev => !prev)}
-          onAddByCoordinates={() => setShowCoordsDialog(true)}
-          lineOfSightMode={lineOfSightMode}
-          onToggleLineOfSight={handleToggleLineOfSight}
-          selectedMarkers={selectedMarkers}
-          onMarkerRemove={handleMarkerRemove}
-          traceData={traceData}
-          traceLoading={traceLoading}
-        />
+<RightPanel
+            onLogout={onLogout}
+            addPointMode={addPointMode}
+            onToggleAddPoint={() => setAddPointMode(prev => !prev)}
+            onAddByCoordinates={() => setShowCoordsDialog(true)}
+            lineOfSightMode={lineOfSightMode}
+            onToggleLineOfSight={handleToggleLineOfSight}
+            selectedMarkers={selectedMarkers}
+            onMarkerRemove={handleMarkerRemove}
+            traceData={traceData}
+            traceLoading={traceLoading}
+            onExpandGraph={() => setExpandedGraph(true)}
+          />
+        </div>
+        {expandedGraph && selectedMarkers.length === 2 && traceData && (
+          <TerrainGraphExpanded
+            traceData={traceData}
+            fromElevation={selectedMarkers[0].elevation}
+            toElevation={selectedMarkers[1].elevation}
+            fromLabel={selectedMarkers[0].label}
+            toLabel={selectedMarkers[1].label}
+            onClose={() => setExpandedGraph(false)}
+          />
+        )}
       </div>
-    </div>
   );
 }
 

@@ -4,11 +4,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import { AddPointDialog } from '../AddPointDialog/AddPointDialog';
-import { listPoints, createPoint, getPointDetails, deletePoint, getStoredAuth, type Point } from '../../services/auth';
+import { listPoints, createPoint, getPointDetails, deletePoint, updatePoint, getStoredAuth, type Point } from '../../services/auth';
+import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 
-function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; currentUser: string | null; onPointDeleted: (id: string) => void }) {
+function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted, onPointEdited }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -80,8 +81,12 @@ function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted 
                   </div>
                   ${isOwner ? `
                     <hr class="popup-separator">
-                    <div class="point-popup-row delete-row">
+                    <div class="point-popup-row action-row">
                       <span></span>
+                      <svg class="edit-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
                       <svg class="trash-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 6h18"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
@@ -90,6 +95,17 @@ function PointMarker({ point, isSelected, onSelect, currentUser, onPointDeleted 
                     </div>` : ''}
                 </div>`;
               if (isOwner) {
+                const editIcon = popupEl.querySelector('.edit-icon');
+                editIcon?.addEventListener('click', () => {
+                  onPointEdited({
+                    id: point.id,
+                    lat: point.lat,
+                    lon: point.lon,
+                    label: point.label,
+                    category_id: point.category_id,
+                    public: point.public,
+                  });
+                });
                 const trashIcon = popupEl.querySelector('.trash-icon');
                 trashIcon?.addEventListener('click', () => {
                   if (confirm('Are you sure you want to remove the marker?')) {
@@ -229,6 +245,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
+  const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; label: string; category_id: number; public: boolean } | null>(null);
   const auth = getStoredAuth();
   const currentUser = auth.email;
   const { showToast } = useToast();
@@ -310,6 +327,30 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
     }
   }, [showToast]);
 
+  const handlePointUpdated = useCallback(async (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => {
+    if (!editingPoint) return;
+    try {
+      await updatePoint(editingPoint.id, {
+        lat,
+        lon,
+        label,
+        category_id: categoryId,
+        public: isPublic,
+      });
+      setPoints(prev => prev.map(p => p.id === editingPoint.id ? { ...p, lat, lon, label, category_id: categoryId, public: isPublic } : p));
+      setEditingPoint(null);
+      showToast('Marker updated', 'success');
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
+  }, [editingPoint, showToast]);
+
+  const handleEditCancel = useCallback(() => {
+    setEditingPoint(null);
+  }, []);
+
   return (
     <div className={`map-view${addPointMode ? ' map-view-crosshair' : ''}`}>
       <MapContainer
@@ -327,14 +368,15 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         <MapCenter center={centerOn} />
         <MapCenterTracker onCenterChange={setMapCenter} />
         {points.map(point => (
-          <PointMarker
-            key={point.id}
-            point={point}
-            isSelected={selectedPointId === point.id}
-            onSelect={setSelectedPointId}
-            currentUser={currentUser}
-            onPointDeleted={handlePointDeleted}
-          />
+         <PointMarker
+              key={point.id}
+              point={point}
+              isSelected={selectedPointId === point.id}
+              onSelect={setSelectedPointId}
+              currentUser={currentUser}
+              onPointDeleted={handlePointDeleted}
+              onPointEdited={setEditingPoint}
+            />
         ))}
       </MapContainer>
       {pendingPoint && (
@@ -352,6 +394,17 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
           editableCoords
           onSave={handleCoordsDialogSave}
           onCancel={handleCoordsDialogCancel}
+        />
+      )}
+      {editingPoint && (
+        <EditPointDialog
+          lat={editingPoint.lat}
+          lon={editingPoint.lon}
+          label={editingPoint.label}
+          categoryId={editingPoint.category_id}
+          isPublic={editingPoint.public}
+          onSave={handlePointUpdated}
+          onCancel={handleEditCancel}
         />
       )}
     </div>

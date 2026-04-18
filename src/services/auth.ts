@@ -167,4 +167,17 @@ export async function deletePoint(pointId: string): Promise<void> {
   }
 }
 
+export async function updatePoint(pointId: string, payload: Partial<CreatePointPayload>): Promise<Point> {
+  const res = await authenticatedFetch(`${API_BASE}/api/point/${pointId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to update point: ${res.status}`);
+  }
+  return res.json();
+}
+
 export { getStoredAuth, storeAuth, clearAuth };

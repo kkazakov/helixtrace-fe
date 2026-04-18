@@ -193,6 +193,24 @@ export interface TraceResponse {
   status: string;
 }
 
+export interface ElevationInfo {
+  lat: number;
+  lon: number;
+  elevation: number;
+}
+
+export async function getElevationInfo(lat: number, lon: number): Promise<ElevationInfo> {
+  const res = await authenticatedFetch(
+    `${API_BASE}/api/point/info?lat=${lat}&lon=${lon}`
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || `Failed to get elevation: ${res.status}`);
+  }
+  const json = await res.json();
+  return json.data;
+}
+
 export async function tracePath(fromLat: number, fromLng: number, toLat: number, toLng: number): Promise<TraceResponse> {
   const res = await authenticatedFetch(
     `${API_BASE}/api/trace-path?from=${fromLat},${fromLng}&to=${toLat},${toLng}`

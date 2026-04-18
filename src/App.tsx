@@ -4,7 +4,7 @@ import { LoginPage } from './components/Login/Login';
 import { MapView } from './components/MapView/MapView';
 import { RightPanel } from './components/RightPanel/RightPanel';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
-import { getStoredAuth, type Point, type TraceResponse } from './services/auth';
+import { getStoredAuth, type Point, type TraceResponse, getElevationInfo } from './services/auth';
 import { tracePath } from './services/auth';
 import { ToastProvider } from './context/ToastContext';
 import { useToast } from './context/ToastContext';
@@ -55,21 +55,33 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     });
   };
 
-  const handleAddLosPoint = (lat: number, lon: number) => {
+  const handleAddLosPoint = async (lat: number, lon: number) => {
     setSelectedMarkers(prev => {
       if (prev.length >= 2) return prev;
-      const idx = prev.length + 1;
-      const tempPoint: Point = {
-        id: `temp-los-${idx}-${Date.now()}`,
-        lat,
-        lon,
-        elevation: 0,
-        label: `Point ${idx}`,
-        category_id: 3,
-        public: false,
-      };
-      return [...prev, tempPoint];
+      return prev;
     });
+
+    try {
+      const info = await getElevationInfo(lat, lon);
+      setSelectedMarkers(prev => {
+        if (prev.length >= 2) return prev;
+        const idx = prev.length + 1;
+        const tempPoint: Point = {
+          id: `temp-los-${idx}-${Date.now()}`,
+          lat: info.lat,
+          lon: info.lon,
+          elevation: info.elevation,
+          label: `Point ${idx}`,
+          category_id: 3,
+          public: false,
+        };
+        return [...prev, tempPoint];
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        showToast(err.message, 'error');
+      }
+    }
   };
 
   useEffect(() => {

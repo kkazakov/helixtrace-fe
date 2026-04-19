@@ -71,6 +71,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
  useEffect(() => {
     if (isSelected && markerRef.current && !lineOfSightMode) {
       markerRef.current.openPopup();
+      if (!point.external) {
       getPointDetails(point.id)
         .then(data => {
           const isOwner = data.user === currentUser;
@@ -146,6 +147,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
           }, 50);
         })
         .catch(() => {});
+      }
     }
     if (!isSelected && markerRef.current) {
       markerRef.current.closePopup();

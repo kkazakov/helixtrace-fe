@@ -27,6 +27,7 @@ export interface Point {
   lon: number;
   elevation: number;
   public: boolean;
+  external: boolean;
   label: string;
   category_id: number;
 }

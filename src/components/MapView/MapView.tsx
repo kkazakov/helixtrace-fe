@@ -55,7 +55,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
         ${point.category_id !== 3 ? `
         <div class="point-popup-row">
           <span class="point-popup-key">Type:</span>
-          <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+          <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}${point.external ? ' (external)' : ''}</span>
         </div>` : ''}
       </div>`
     );
@@ -101,7 +101,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                   ${point.category_id !== 3 ? `
                   <div class="point-popup-row">
                     <span class="point-popup-key">Type:</span>
-                    <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+                    <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}${point.external ? ' (external)' : ''}</span>
                   </div>` : ''}
                   ${data.user ? `
                   <div class="point-popup-row">

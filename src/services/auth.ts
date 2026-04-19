@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = (window as any).__API_BASE__ || 'http://127.0.0.1:8000';
 
 export interface LoginCredentials {
   email: string;

@@ -1,0 +1,30 @@
+.dashboard {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.dashboard-map {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.dashboard-panel {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .dashboard-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    max-width: 340px;
+    height: 100%;
+    z-index: 1000;
+  }
+}

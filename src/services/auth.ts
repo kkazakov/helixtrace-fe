@@ -111,7 +111,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
 
 export async function listPoints(includePublic = true): Promise<Point[]> {
   const res = await authenticatedFetch(
-    `${API_BASE}/api/points?include_public=${includePublic}`
+    `${API_BASE}/api/points?include_public=${includePublic}&include_meshcore_dashboard=true`
   );
   if (!res.ok) {
     const body = await res.json().catch(() => null);

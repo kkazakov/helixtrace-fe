@@ -444,7 +444,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
     if (stored === 'osm' || stored === 'opentopomap' || stored === 'stamenterrain' || stored === 'esri' || stored === 'cartodb_positron' || stored === 'cartodb_dark') {
       return stored;
     }
-    return 'opentopomap';
+    return 'osm';
   });
   const [isCartoDB, setIsCartoDB] = useState(() => {
     const stored = localStorage.getItem('helixtrace_maplayer');

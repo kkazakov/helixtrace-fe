@@ -182,7 +182,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
   return (
     <Marker
       position={position}
-      icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos)}
+      icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos, point.external)}
       eventHandlers={{
         click: handleClick,
         ...(lineOfSightMode && isSelectedForLos && onMarkerDrag && point.id.startsWith('temp-los-')

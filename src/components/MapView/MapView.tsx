@@ -364,15 +364,19 @@ function ElevationLabel({ point }: { point: Point }) {
   useEffect(() => {
     if (!point.elevation || point.elevation === 0) return;
 
+    const elevationText = Math.round(point.elevation) + 'm';
+
     const icon = L.divIcon({
-      className: 'los-elevation-label',
-      html: `<div class="los-elevation-text">Elevation: ${Math.round(point.elevation)}m</div>`,
-      iconSize: [100, 20],
-      iconAnchor: [50, 0],
+      className: 'los-marker-label',
+      html: `<div class="los-marker-label-content"><div class="los-marker-label-name">${point.label}</div><div class="los-marker-label-elevation">${elevationText}</div></div>`,
+      iconSize: [80, 80],
+      iconAnchor: [40, 80],
       popupAnchor: [0, 0],
     });
 
-    const marker = L.marker([point.lat, point.lon], {
+    const labelOffset = L.latLng(point.lat + 0.0004, point.lon);
+
+    const marker = L.marker(labelOffset, {
       icon,
       interactive: false,
     }).addTo(map);

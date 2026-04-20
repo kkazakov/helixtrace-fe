@@ -51,6 +51,39 @@
   pointer-events: none;
 }
 
+.los-marker-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.los-marker-label-content {
+  text-align: center;
+  pointer-events: none;
+}
+
+.los-marker-label-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 3px 8px;
+  border-radius: 4px 4px 0 0;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.los-marker-label-elevation {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 2px 8px;
+  border-radius: 0 0 4px 4px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 .custom-popup .leaflet-popup-content-wrapper {
   background: var(--bg-secondary);
   color: var(--text-primary);

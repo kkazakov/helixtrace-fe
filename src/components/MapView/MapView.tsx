@@ -387,7 +387,7 @@ function ElevationLabel({ point }: { point: Point }) {
   return null;
 }
 
-function TempLosMarker({ position, label: _label, onDragEnd, onRemove }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
+function TempLosMarker({ position, label, elevation, onDragEnd, onRemove }: { position: [number, number]; label: string; elevation?: number; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
   const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
@@ -395,23 +395,38 @@ function TempLosMarker({ position, label: _label, onDragEnd, onRemove }: { posit
     markerRef.current.setLatLng(position);
   }, [position]);
 
+  const elevationText = elevation ? `${Math.round(elevation)}m` : '';
+
+  const labelIcon = L.divIcon({
+    className: 'los-marker-label',
+    html: `<div class="los-marker-label-content"><div class="los-marker-label-name">${label}</div>${elevationText ? `<div class="los-marker-label-elevation">${elevationText}</div>` : ''}</div>`,
+    iconSize: [80, 80],
+    iconAnchor: [40, 80],
+    popupAnchor: [0, 0],
+  });
+
+  const labelOffset = L.latLng(position[0] + 0.0004, position[1]);
+
   return (
-    <Marker
-      position={position}
-      icon={losTempIcon}
-      draggable
-      eventHandlers={{
-        dragend: (e) => {
-          const marker = e.target as L.Marker;
-          const pos = marker.getLatLng();
-          onDragEnd(pos.lat, pos.lng);
-        },
-        click: () => {
-          onRemove();
-        },
-      }}
-      ref={markerRef}
-    />
+    <>
+      <Marker
+        position={position}
+        icon={losTempIcon}
+        draggable
+        eventHandlers={{
+          dragend: (e) => {
+            const marker = e.target as L.Marker;
+            const pos = marker.getLatLng();
+            onDragEnd(pos.lat, pos.lng);
+          },
+          click: () => {
+            onRemove();
+          },
+        }}
+        ref={markerRef}
+      />
+      <Marker position={labelOffset} icon={labelIcon} interactive={false} />
+    </>
   );
 }
 
@@ -639,6 +654,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 key={`temp-${idx}`}
                 position={[marker.lat, marker.lon]}
                 label={marker.label}
+                elevation={marker.elevation}
                 onDragEnd={(lat, lon) => onMarkerDrag?.(marker.id, lat, lon)}
                 onRemove={() => onMarkerRemove?.(marker.id)}
               />
@@ -647,7 +663,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
           return null;
         })}
         {lineOfSightMode && selectedMarkers.map(marker => {
-          if (marker.elevation && marker.elevation > 0) {
+          if (marker.elevation && marker.elevation > 0 && !marker.id.startsWith('temp-los-')) {
             return <ElevationLabel key={`elev-${marker.id}`} point={marker} />;
           }
           return null;

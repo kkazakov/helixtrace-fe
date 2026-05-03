@@ -9,6 +9,7 @@ import { EditPointDialog } from '../EditPointDialog/EditPointDialog';
 import { getCategoryIcon, POINT_CATEGORIES } from '../../services/pointCategories';
 import { useToast } from '../../context/ToastContext';
 import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
+import { MapSearch } from '../MapSearch/MapSearch';
 import { useTheme } from '../../hooks/useTheme';
 
 function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer: _mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void;   onPointEdited: (point: { id: string; lat: number; lon: number; elevation: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
@@ -249,13 +250,13 @@ function MapClickHandler({ onMapClick }: { onMapClick: (pos: [number, number]) =
   return null;
 }
 
-function MapCenter({ center }: { center: [number, number] | null }) {
+function MapCenter({ center, zoom }: { center: [number, number] | null; zoom?: number | null }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, map.getZoom());
+      map.setView(center, zoom ?? map.getZoom());
     }
-  }, [center, map]);
+  }, [center, zoom, map]);
   return null;
 }
 
@@ -453,7 +454,7 @@ interface MapViewProps {
 export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoordsDialog, onCancelCoordsDialog, onMarkerSelect, lineOfSightMode, selectedMarkers, onMarkerDrag, onAddLosPoint, onMarkerRemove, traceResults }: MapViewProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lon: number } | null>(null);
-  const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
+  const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; zoom?: number } | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; elevation: number; label: string; category_id: number; public: boolean } | null>(null);
@@ -528,7 +529,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         category_id: categoryId,
       });
       setPoints(prev => [...prev, newPoint]);
-      setCenterOn([newPoint.lat, newPoint.lon]);
+      setFocusTarget({ center: [newPoint.lat, newPoint.lon] });
       onPointAdded();
       showToast('Point created successfully', 'success');
     } catch (err) {
@@ -598,6 +599,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
 
   return (
     <div className={`map-view${(addPointMode || lineOfSightMode) ? ' map-view-crosshair' : ''}`}>
+      <MapSearch onSelect={(lat, lon) => setFocusTarget({ center: [lat, lon], zoom: 14 })} />
       <MapContainer
         center={[42.6977, 23.3215]}
         zoom={12}
@@ -631,7 +633,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         />
         <LocationMarker onLocationFound={handleLocationFound} />
         <MapClickHandler onMapClick={handleMapClick} />
-        <MapCenter center={centerOn} />
+        <MapCenter center={focusTarget?.center ?? null} zoom={focusTarget?.zoom ?? null} />
        <MapCenterTracker onCenterChange={setMapCenter} />
         <MapLayerToggle onLayerChange={handleLayerChange} />
         {points.map(point => (

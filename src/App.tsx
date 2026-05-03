@@ -99,6 +99,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
           label: `Point ${idx}`,
           category_id: 3,
           public: false,
+          external: false,
         };
         return [...prev, tempPoint];
       });

@@ -55,7 +55,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
         ${point.category_id !== 3 ? `
         <div class="point-popup-row">
           <span class="point-popup-key">Type:</span>
-          <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+          <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}${point.external ? ' (external)' : ''}</span>
         </div>` : ''}
       </div>`
     );
@@ -71,6 +71,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
  useEffect(() => {
     if (isSelected && markerRef.current && !lineOfSightMode) {
       markerRef.current.openPopup();
+      if (!point.external) {
       getPointDetails(point.id)
         .then(data => {
           const isOwner = data.user === currentUser;
@@ -101,7 +102,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                   ${point.category_id !== 3 ? `
                   <div class="point-popup-row">
                     <span class="point-popup-key">Type:</span>
-                    <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}</span>
+                    <span class="point-popup-value">${POINT_CATEGORIES.find(c => c.id === point.category_id)?.label || ''}${point.external ? ' (external)' : ''}</span>
                   </div>` : ''}
                   ${data.user ? `
                   <div class="point-popup-row">
@@ -147,6 +148,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
           }, 50);
         })
         .catch(() => {});
+      }
     }
     if (!isSelected && markerRef.current) {
       markerRef.current.closePopup();
@@ -181,7 +183,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
   return (
     <Marker
       position={position}
-      icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos)}
+      icon={getCategoryIcon(point.category_id, point.public, isSelectedForLos, point.external)}
       eventHandlers={{
         click: handleClick,
         ...(lineOfSightMode && isSelectedForLos && onMarkerDrag && point.id.startsWith('temp-los-')
@@ -363,15 +365,19 @@ function ElevationLabel({ point }: { point: Point }) {
   useEffect(() => {
     if (!point.elevation || point.elevation === 0) return;
 
+    const elevationText = Math.round(point.elevation) + 'm';
+
     const icon = L.divIcon({
-      className: 'los-elevation-label',
-      html: `<div class="los-elevation-text">Elevation: ${Math.round(point.elevation)}m</div>`,
-      iconSize: [100, 20],
-      iconAnchor: [50, 0],
+      className: 'los-marker-label',
+      html: `<div class="los-marker-label-content"><div class="los-marker-label-name">${point.label}</div><div class="los-marker-label-elevation">${elevationText}</div></div>`,
+      iconSize: [80, 80],
+      iconAnchor: [40, 80],
       popupAnchor: [0, 0],
     });
 
-    const marker = L.marker([point.lat, point.lon], {
+    const labelOffset = L.latLng(point.lat + 0.0004, point.lon);
+
+    const marker = L.marker(labelOffset, {
       icon,
       interactive: false,
     }).addTo(map);
@@ -386,7 +392,7 @@ function ElevationLabel({ point }: { point: Point }) {
   return null;
 }
 
-function TempLosMarker({ position, label: _label, onDragEnd, onRemove }: { position: [number, number]; label: string; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
+function TempLosMarker({ position, label, elevation, onDragEnd, onRemove }: { position: [number, number]; label: string; elevation?: number; onDragEnd: (lat: number, lon: number) => void; onRemove: () => void }) {
   const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
@@ -394,23 +400,38 @@ function TempLosMarker({ position, label: _label, onDragEnd, onRemove }: { posit
     markerRef.current.setLatLng(position);
   }, [position]);
 
+  const elevationText = elevation ? `${Math.round(elevation)}m` : '';
+
+  const labelIcon = L.divIcon({
+    className: 'los-marker-label',
+    html: `<div class="los-marker-label-content"><div class="los-marker-label-name">${label}</div>${elevationText ? `<div class="los-marker-label-elevation">${elevationText}</div>` : ''}</div>`,
+    iconSize: [80, 80],
+    iconAnchor: [40, 80],
+    popupAnchor: [0, 0],
+  });
+
+  const labelOffset = L.latLng(position[0] + 0.0004, position[1]);
+
   return (
-    <Marker
-      position={position}
-      icon={losTempIcon}
-      draggable
-      eventHandlers={{
-        dragend: (e) => {
-          const marker = e.target as L.Marker;
-          const pos = marker.getLatLng();
-          onDragEnd(pos.lat, pos.lng);
-        },
-        click: () => {
-          onRemove();
-        },
-      }}
-      ref={markerRef}
-    />
+    <>
+      <Marker
+        position={position}
+        icon={losTempIcon}
+        draggable
+        eventHandlers={{
+          dragend: (e) => {
+            const marker = e.target as L.Marker;
+            const pos = marker.getLatLng();
+            onDragEnd(pos.lat, pos.lng);
+          },
+          click: () => {
+            onRemove();
+          },
+        }}
+        ref={markerRef}
+      />
+      <Marker position={labelOffset} icon={labelIcon} interactive={false} />
+    </>
   );
 }
 
@@ -639,6 +660,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
                 key={`temp-${idx}`}
                 position={[marker.lat, marker.lon]}
                 label={marker.label}
+                elevation={marker.elevation}
                 onDragEnd={(lat, lon) => onMarkerDrag?.(marker.id, lat, lon)}
                 onRemove={() => onMarkerRemove?.(marker.id)}
               />
@@ -647,7 +669,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
           return null;
         })}
         {lineOfSightMode && selectedMarkers.map(marker => {
-          if (marker.elevation && marker.elevation > 0) {
+          if (marker.elevation && marker.elevation > 0 && !marker.id.startsWith('temp-los-')) {
             return <ElevationLabel key={`elev-${marker.id}`} point={marker} />;
           }
           return null;

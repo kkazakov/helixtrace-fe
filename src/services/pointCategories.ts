@@ -16,13 +16,17 @@ const iconCache = new Map<string, L.Icon>();
 
 const categoryColors: Record<number, Record<string, string>> = {
   1: { true: '#1976d2', false: '#7b1fa2' },
-  2: { true: '#388e3c', false: '#d32f2f' },
+  2: { true: '#2e7d32', false: '#d32f2f' },
   3: { true: '#f9a825', false: '#ef6c00' },
 };
 
-export function getCategoryIcon(categoryId: number, public_: boolean, selected?: boolean): L.Icon {
-  const color = selected ? '#000000' : (categoryColors[categoryId]?.[String(public_)] ?? '#f9a825');
-  const key = `${categoryId}-${public_ ? 'p' : 'v'}-${selected ? 's' : 'n'}`;
+export function getCategoryIcon(categoryId: number, public_: boolean, selected?: boolean, external?: boolean): L.Icon {
+  const color = selected
+    ? '#000000'
+    : external && categoryId === 2
+      ? '#388e3c'
+      : (categoryColors[categoryId]?.[String(public_)] ?? '#f9a825');
+  const key = `${categoryId}-${public_ ? 'p' : 'v'}-${selected ? 's' : 'n'}-${external ? 'e' : 'i'}`;
   const cached = iconCache.get(key);
   if (cached) return cached;
   const icon = L.icon({

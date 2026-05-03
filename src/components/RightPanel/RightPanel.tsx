@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { getStoredAuth, clearAuth, type Point, type TraceResponse } from '../../services/auth';
 import { ThemeToggle } from '../ThemeToggle/ThemeToggle';
 import { calculateDistance, formatDistance } from '../../services/distance';
@@ -13,6 +14,41 @@ interface TraceResult {
   losStatus: 'unknown' | 'clear' | 'blocked';
 }
 
+function ElevationInput({ value, onCommit }: { value: number; onCommit: (val: number) => void }) {
+  const [draft, setDraft] = useState(String(Math.round(value)));
+
+  useEffect(() => {
+    setDraft(String(Math.round(value)));
+  }, [value]);
+
+  const handleBlur = () => {
+    const parsed = parseFloat(draft);
+    if (!Number.isNaN(parsed)) {
+      onCommit(parsed);
+    } else {
+      setDraft(String(Math.round(value)));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className="los-marker-elevation"
+      value={draft}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
+
 interface RightPanelProps {
   onLogout: () => void;
   addPointMode: boolean;
@@ -26,9 +62,10 @@ interface RightPanelProps {
   traceLoading: boolean;
   losStatus: 'unknown' | 'clear' | 'blocked';
   onExpandGraph: (index: number) => void;
+  onElevationChange?: (id: string, elevation: number) => void;
 }
 
-export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceResults, traceLoading, losStatus: _losStatus, onExpandGraph }: RightPanelProps) {
+export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCoordinates, lineOfSightMode, onToggleLineOfSight, selectedMarkers, onMarkerRemove, traceResults, traceLoading, losStatus: _losStatus, onExpandGraph, onElevationChange }: RightPanelProps) {
   const auth = getStoredAuth();
 
   const handleLogout = () => {
@@ -118,6 +155,12 @@ export function RightPanel({ onLogout, addPointMode, onToggleAddPoint, onAddByCo
                 {selectedMarkers.map(marker => (
                   <div key={marker.id} className="los-marker-item">
                     <span className="los-marker-label">{marker.label}</span>
+                    {onElevationChange && (
+                      <ElevationInput
+                        value={marker.elevation}
+                        onCommit={(val) => onElevationChange(marker.id, val)}
+                      />
+                    )}
                     <button className="los-marker-remove" onClick={() => onMarkerRemove(marker.id)}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />

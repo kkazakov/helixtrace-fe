@@ -178,6 +178,7 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
+  gap: 8px;
 }
 
 .los-marker-label {
@@ -210,6 +211,26 @@
 .los-marker-remove:hover {
   background: var(--error-light);
   color: var(--error);
+}
+
+.los-marker-elevation {
+  width: 56px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  text-align: right;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.los-marker-elevation:focus {
+  border-color: var(--accent);
+  background: var(--bg-input-focus);
 }
 
 .los-distance {

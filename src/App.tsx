@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './components/Login/Login';
 import { MapView } from './components/MapView/MapView';
@@ -31,6 +31,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
   const [losStatus, setLosStatus] = useState<LOSStatus>('unknown');
   const [traceLoading, setTraceLoading] = useState(false);
   const [expandedGraph, setExpandedGraph] = useState<{ index: number } | null>(null);
+  const traceCacheRef = useRef<Record<string, TraceResponse>>({});
 
   const handleToggleLineOfSight = () => {
     setLineOfSightMode(prev => !prev);
@@ -58,6 +59,10 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
     setSelectedMarkers(prev => prev.filter(m => m.id !== id));
     setTraceResults([]);
     setLosStatus('unknown');
+  };
+
+  const handleElevationChange = (id: string, elevation: number) => {
+    setSelectedMarkers(prev => prev.map(m => m.id === id ? { ...m, elevation } : m));
   };
 
   const handleMarkerDrag = async (id: string, lat: number, lon: number) => {
@@ -116,8 +121,18 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
         pairs.push({ from: selectedMarkers[0], to: selectedMarkers[2] });
       }
 
+      const getTraceData = async (from: Point, to: Point) => {
+        const key = `${from.lat},${from.lon}-${to.lat},${to.lon}`;
+        if (traceCacheRef.current[key]) {
+          return traceCacheRef.current[key];
+        }
+        const data = await tracePath(from.lat, from.lon, to.lat, to.lon);
+        traceCacheRef.current[key] = data;
+        return data;
+      };
+
       const promises = pairs.map(({ from, to }) =>
-        tracePath(from.lat, from.lon, to.lat, to.lon).then(data => ({
+        getTraceData(from, to).then(data => ({
           traceData: data,
           fromElevation: from.elevation,
           toElevation: to.elevation,
@@ -179,6 +194,7 @@ function DashboardInner({ onLogout }: { onLogout: () => void }) {
             traceLoading={traceLoading}
             losStatus={losStatus}
             onExpandGraph={(index: number) => setExpandedGraph({ index })}
+            onElevationChange={handleElevationChange}
           />
         </div>
         {expandedGraph && traceResults[expandedGraph.index] && (

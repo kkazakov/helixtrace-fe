@@ -18,5 +18,8 @@
 - [Theme System](explanation/theme-system.md) — Light/dark mode, CSS variables, persistence, cross-tab sync
 - [Toast Notifications](explanation/toast-notifications.md) — Context-based notification system, auto-dismiss
 
+### Reference
+- [Developer Reference](reference/developer-reference.md) — Technical conventions, state management patterns, API service structure, and contribution checklist
+
 ### Architecture Decision Records
 - [ADR-001: Client-Side LOS Computation](architecture/adr/ADR-001-client-side-los-computation.md) — Why LOS runs in the browser

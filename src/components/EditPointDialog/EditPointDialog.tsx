@@ -5,16 +5,18 @@ import './EditPointDialog.css';
 export interface EditPointDialogProps {
   lat: number;
   lon: number;
+  elevation: number;
   label: string;
   categoryId: number;
   isPublic: boolean;
-  onSave: (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => void;
+  onSave: (lat: number, lon: number, elevation: number, label: string, categoryId: number, isPublic: boolean) => void;
   onCancel: () => void;
 }
 
-export function EditPointDialog({ lat, lon, label, categoryId, isPublic, onSave, onCancel }: EditPointDialogProps) {
+export function EditPointDialog({ lat, lon, elevation, label, categoryId, isPublic, onSave, onCancel }: EditPointDialogProps) {
   const [latVal, setLatVal] = useState(lat.toFixed(6));
   const [lonVal, setLonVal] = useState(lon.toFixed(6));
+  const [elevationVal, setElevationVal] = useState(elevation.toString());
   const [labelVal, setLabelVal] = useState(label);
   const [categoryIdVal, setCategoryIdVal] = useState(categoryId);
   const [isPublicVal, setIsPublicVal] = useState(isPublic);
@@ -22,8 +24,9 @@ export function EditPointDialog({ lat, lon, label, categoryId, isPublic, onSave,
   const handleSave = () => {
     const parsedLat = parseFloat(latVal);
     const parsedLon = parseFloat(lonVal);
-    if (isNaN(parsedLat) || isNaN(parsedLon)) return;
-    onSave(parsedLat, parsedLon, labelVal, categoryIdVal, isPublicVal);
+    const parsedElevation = parseFloat(elevationVal);
+    if (isNaN(parsedLat) || isNaN(parsedLon) || isNaN(parsedElevation)) return;
+    onSave(parsedLat, parsedLon, parsedElevation, labelVal, categoryIdVal, isPublicVal);
   };
 
   return (
@@ -53,6 +56,16 @@ export function EditPointDialog({ lat, lon, label, categoryId, isPublic, onSave,
               className="edit-point-input"
               value={lonVal}
               onChange={e => setLonVal(e.target.value)}
+            />
+          </div>
+          <div className="edit-point-field">
+            <label htmlFor="edit-point-elevation">Elevation (m)</label>
+            <input
+              id="edit-point-elevation"
+              type="text"
+              className="edit-point-input"
+              value={elevationVal}
+              onChange={e => setElevationVal(e.target.value)}
             />
           </div>
           <div className="edit-point-field">

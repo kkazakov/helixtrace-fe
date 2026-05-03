@@ -11,7 +11,7 @@ import { useToast } from '../../context/ToastContext';
 import { MapLayerToggle } from '../MapLayerToggle/MapLayerToggle';
 import { useTheme } from '../../hooks/useTheme';
 
-function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer: _mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void; onPointEdited: (point: { id: string; lat: number; lon: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
+function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser, onPointDeleted, onPointEdited, lineOfSightMode, selectedMarkerIds, onMarkerDrag, selectedMarkers, mapLayer: _mapLayer }: { point: Point; isSelected: boolean; onSelect: (id: string) => void; onMarkerSelect: (point: Point) => void; currentUser: string | null; onPointDeleted: (id: string) => void;   onPointEdited: (point: { id: string; lat: number; lon: number; elevation: number; label: string; category_id: number; public: boolean }) => void; lineOfSightMode: boolean; selectedMarkerIds: string[]; onMarkerDrag?: (id: string, lat: number, lon: number) => void; selectedMarkers: Point[]; mapLayer: string }) {
   const markerRef = useRef<L.Marker>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const map = useMap();
@@ -130,6 +130,7 @@ function PointMarker({ point, isSelected, onSelect, onMarkerSelect, currentUser,
                     id: point.id,
                     lat: point.lat,
                     lon: point.lon,
+                    elevation: point.elevation,
                     label: point.label,
                     category_id: point.category_id,
                     public: point.public,
@@ -434,7 +435,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
   const [centerOn, setCenterOn] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([42.6977, 23.3215]);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
-  const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; label: string; category_id: number; public: boolean } | null>(null);
+  const [editingPoint, setEditingPoint] = useState<{ id: string; lat: number; lon: number; elevation: number; label: string; category_id: number; public: boolean } | null>(null);
   const [mapLayer, setMapLayer] = useState<'osm' | 'opentopomap' | 'stamenterrain' | 'esri' | 'cartodb_positron' | 'cartodb_dark'>(() => {
     const stored = localStorage.getItem('helixtrace_maplayer');
     if (stored === 'cartodb') {
@@ -540,17 +541,18 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
     }
   }, [showToast]);
 
-  const handlePointUpdated = useCallback(async (lat: number, lon: number, label: string, categoryId: number, isPublic: boolean) => {
+  const handlePointUpdated = useCallback(async (lat: number, lon: number, elevation: number, label: string, categoryId: number, isPublic: boolean) => {
     if (!editingPoint) return;
     try {
       await updatePoint(editingPoint.id, {
         lat,
         lon,
+        elevation,
         label,
         category_id: categoryId,
         public: isPublic,
       });
-      setPoints(prev => prev.map(p => p.id === editingPoint.id ? { ...p, lat, lon, label, category_id: categoryId, public: isPublic } : p));
+      setPoints(prev => prev.map(p => p.id === editingPoint.id ? { ...p, lat, lon, elevation, label, category_id: categoryId, public: isPublic } : p));
       setEditingPoint(null);
       showToast('Marker updated', 'success');
     } catch (err) {
@@ -672,6 +674,7 @@ export function MapView({ addPointMode, onCancelAddPoint, onPointAdded, showCoor
         <EditPointDialog
           lat={editingPoint.lat}
           lon={editingPoint.lon}
+          elevation={editingPoint.elevation}
           label={editingPoint.label}
           categoryId={editingPoint.category_id}
           isPublic={editingPoint.public}

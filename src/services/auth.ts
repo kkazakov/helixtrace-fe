@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const rawApiBase = (window as any).__API_BASE__;
+const API_BASE = rawApiBase && rawApiBase !== '${API_BASE_URL}' ? rawApiBase : 'http://127.0.0.1:8000';
 
 export interface LoginCredentials {
   email: string;
@@ -35,6 +36,7 @@ export interface Point {
 export interface CreatePointPayload {
   lat: number;
   lon: number;
+  elevation?: number;
   public: boolean;
   label: string;
   category_id: number;

@@ -1,4 +1,4 @@
-const API_BASE = (window as any).__API_BASE__ || 'http://127.0.0.1:8000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export interface LoginCredentials {
   email: string;
@@ -27,6 +27,7 @@ export interface Point {
   lon: number;
   elevation: number;
   public: boolean;
+  external: boolean;
   label: string;
   category_id: number;
 }
@@ -111,7 +112,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
 
 export async function listPoints(includePublic = true): Promise<Point[]> {
   const res = await authenticatedFetch(
-    `${API_BASE}/api/points?include_public=${includePublic}`
+    `${API_BASE}/api/points?include_public=${includePublic}&include_meshcore_dashboard=true`
   );
   if (!res.ok) {
     const body = await res.json().catch(() => null);
